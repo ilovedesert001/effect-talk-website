@@ -33,30 +33,28 @@ export function PatternCard({ pattern }: PatternCardProps) {
   return (
     <Link href={`/patterns/${pattern.id}`} className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl">
       <Card className="hover:bg-muted/50 hover:shadow-md transition-all duration-200 group h-full gap-4 py-4">
-        {/* Header: title, description, badges */}
-        <CardHeader className="pb-1 pt-2">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-sm group-hover:text-primary transition-colors">
-                {pattern.title}
-              </CardTitle>
-              <CardDescription className="mt-0.5 line-clamp-1 text-xs">
-                {pattern.description}
-              </CardDescription>
-            </div>
-            <div className="flex gap-1 shrink-0">
+        {/* Header: category labels on top, then title + description */}
+        <CardHeader className="pb-1 pt-1">
+          {(pattern.difficulty || pattern.category) && (
+            <div className="flex gap-1 mb-1">
               {pattern.difficulty && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300">
                   {pattern.difficulty}
                 </Badge>
               )}
               {pattern.category && (
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs bg-blue-950/10 dark:bg-blue-900/30 text-blue-900 dark:text-blue-300">
                   {pattern.category}
                 </Badge>
               )}
             </div>
-          </div>
+          )}
+          <CardTitle className="text-sm group-hover:text-primary transition-colors">
+            {pattern.title}
+          </CardTitle>
+          <CardDescription className="mt-0.5 line-clamp-1 text-xs">
+            {pattern.description}
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="pt-0 space-y-2">
@@ -74,11 +72,7 @@ export function PatternCard({ pattern }: PatternCardProps) {
 
           {/* Code previews: Pattern and Anti-Pattern side by side */}
           {hasCodePreviews && (
-            <div className={
-              patternCode && antiPatternCode
-                ? "grid grid-cols-2 gap-2"
-                : "grid grid-cols-1 gap-2"
-            }>
+            <div className="grid grid-cols-1 gap-2">
               {/* Pattern (the good way) */}
               {patternCode && (
                 <CodePreviewBlock
