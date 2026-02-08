@@ -67,6 +67,44 @@ export const apiKeys = pgTable("api_keys", {
 ])
 
 // ---------------------------------------------------------------------------
+// Patterns (Effect.ts patterns catalog)
+// ---------------------------------------------------------------------------
+
+export const patterns = pgTable("patterns", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  category: text("category"),
+  difficulty: text("difficulty"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_patterns_category").on(table.category),
+  index("idx_patterns_difficulty").on(table.difficulty),
+])
+
+// ---------------------------------------------------------------------------
+// Rules (Effect.ts rules catalog)
+// ---------------------------------------------------------------------------
+
+export const rules = pgTable("rules", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  category: text("category"),
+  severity: text("severity"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_rules_category").on(table.category),
+  index("idx_rules_severity").on(table.severity),
+])
+
+// ---------------------------------------------------------------------------
 // Analytics events
 // ---------------------------------------------------------------------------
 

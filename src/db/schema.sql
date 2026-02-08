@@ -48,6 +48,38 @@ CREATE TABLE IF NOT EXISTS api_keys (
 
 CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id);
 
+-- Patterns (Effect.ts patterns catalog)
+CREATE TABLE IF NOT EXISTS patterns (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title         TEXT NOT NULL,
+  description   TEXT NOT NULL,
+  content       TEXT NOT NULL,
+  category      TEXT,
+  difficulty    TEXT,
+  tags          TEXT[],
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_patterns_category ON patterns(category);
+CREATE INDEX IF NOT EXISTS idx_patterns_difficulty ON patterns(difficulty);
+
+-- Rules (Effect.ts rules catalog)
+CREATE TABLE IF NOT EXISTS rules (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  title         TEXT NOT NULL,
+  description   TEXT NOT NULL,
+  content       TEXT NOT NULL,
+  category      TEXT,
+  severity      TEXT,
+  tags          TEXT[],
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_rules_category ON rules(category);
+CREATE INDEX IF NOT EXISTS idx_rules_severity ON rules(severity);
+
 -- Analytics events
 CREATE TABLE IF NOT EXISTS analytics_events (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -48,6 +48,18 @@
 
 :root {
   --radius: 0.625rem;
+
+  /* Sugar-high syntax highlighting — light mode */
+  --sh-class: #2d5e9d;
+  --sh-identifier: #354150;
+  --sh-sign: #8996a3;
+  --sh-property: #0550ae;
+  --sh-entity: #249a97;
+  --sh-jsxliterals: #6266d1;
+  --sh-string: #00a99a;
+  --sh-keyword: #cf222e;
+  --sh-comment: #8b949e;
+  --sh-number: #6f42c1;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -82,6 +94,18 @@
 }
 
 .dark {
+  /* Sugar-high syntax highlighting — dark mode */
+  --sh-class: #79c0ff;
+  --sh-identifier: #c9d1d9;
+  --sh-sign: #8b949e;
+  --sh-property: #79c0ff;
+  --sh-entity: #7ee787;
+  --sh-jsxliterals: #a5d6ff;
+  --sh-string: #a5d6ff;
+  --sh-keyword: #ff7b72;
+  --sh-comment: #8b949e;
+  --sh-number: #d2a8ff;
+
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -249,6 +273,22 @@
 
   .dark .prose-invert blockquote {
     @apply border-muted-foreground/30;
+  }
+
+  /* Sugar-high code blocks in cards */
+  .sh-code {
+    @apply text-xs leading-5 whitespace-pre;
+    tab-size: 2;
+  }
+
+  .sh-code-wrap {
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .sh-code-wrap .sh__line {
+    white-space: pre-wrap;
   }
 
   /* Neutral color scheme (prose-neutral) */

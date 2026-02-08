@@ -1,79 +1,91 @@
 /**
- * Effect service to call the backend HTTP API for patterns and rules.
+ * BackendApi service -- provides patterns, rules, and search.
  *
- * The backend exposes:
- *   GET /patterns         -> { patterns: Pattern[] }
- *   GET /patterns/:id     -> Pattern
- *   GET /rules            -> { rules: Rule[] }
- *   GET /rules/:id        -> Rule
- *   GET /search?q=...     -> { patterns: Pattern[], rules: Rule[] }
- *
- * Assumption: Backend API shape is as above. Adjust if actual API differs.
+ * Data is stored in PostgreSQL and queried via the Db service.
+ * This module maps DbPattern/DbRule to the public Pattern/Rule types
+ * consumed by pages and components.
  */
 
 import { Effect } from "effect"
 import { BackendApiError } from "@/services/BackendApi/errors"
 import type { Pattern, Rule, SearchResult } from "@/services/BackendApi/types"
-import { apiFetch } from "@/services/BackendApi/helpers"
+import {
+  getAllPatterns,
+  getPatternById,
+  getAllRules,
+  getRuleById,
+  searchPatternsAndRules,
+} from "@/services/Db/api"
+import type { DbPattern, DbRule } from "@/services/Db/types"
+
+// ---------------------------------------------------------------------------
+// Mappers (Db types -> public API types)
+// ---------------------------------------------------------------------------
+
+function toPattern(db: DbPattern): Pattern {
+  return {
+    id: db.id,
+    title: db.title,
+    description: db.description,
+    content: db.content,
+    category: db.category ?? undefined,
+    difficulty: db.difficulty ?? undefined,
+    tags: db.tags ?? undefined,
+  }
+}
+
+function toRule(db: DbRule): Rule {
+  return {
+    id: db.id,
+    title: db.title,
+    description: db.description,
+    content: db.content,
+    category: db.category ?? undefined,
+    severity: db.severity ?? undefined,
+    tags: db.tags ?? undefined,
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Public API (Effect wrappers)
 // ---------------------------------------------------------------------------
 
 export function fetchPatterns(): Effect.Effect<readonly Pattern[], BackendApiError> {
-  return Effect.tryPromise({
-    try: async () => {
-      const data = await apiFetch<{ patterns: Pattern[] }>("/patterns")
-      return data.patterns
-    },
-    catch: (error) =>
-      new BackendApiError({
-        message: error instanceof Error ? error.message : "Failed to fetch patterns",
-      }),
-  })
+  return getAllPatterns().pipe(
+    Effect.map((rows) => rows.map(toPattern)),
+    Effect.mapError((e) => new BackendApiError({ message: e.message })),
+  )
 }
 
-export function fetchPattern(id: string): Effect.Effect<Pattern, BackendApiError> {
-  return Effect.tryPromise({
-    try: () => apiFetch<Pattern>(`/patterns/${encodeURIComponent(id)}`),
-    catch: (error) =>
-      new BackendApiError({
-        message: error instanceof Error ? error.message : `Failed to fetch pattern ${id}`,
-      }),
-  })
+export function fetchPattern(id: string): Effect.Effect<Pattern | null, BackendApiError> {
+  return getPatternById(id).pipe(
+    Effect.map((row) => (row ? toPattern(row) : null)),
+    Effect.mapError((e) => new BackendApiError({ message: e.message })),
+  )
 }
 
 export function fetchRules(): Effect.Effect<readonly Rule[], BackendApiError> {
-  return Effect.tryPromise({
-    try: async () => {
-      const data = await apiFetch<{ rules: Rule[] }>("/rules")
-      return data.rules
-    },
-    catch: (error) =>
-      new BackendApiError({
-        message: error instanceof Error ? error.message : "Failed to fetch rules",
-      }),
-  })
+  return getAllRules().pipe(
+    Effect.map((rows) => rows.map(toRule)),
+    Effect.mapError((e) => new BackendApiError({ message: e.message })),
+  )
 }
 
-export function fetchRule(id: string): Effect.Effect<Rule, BackendApiError> {
-  return Effect.tryPromise({
-    try: () => apiFetch<Rule>(`/rules/${encodeURIComponent(id)}`),
-    catch: (error) =>
-      new BackendApiError({
-        message: error instanceof Error ? error.message : `Failed to fetch rule ${id}`,
-      }),
-  })
+export function fetchRule(id: string): Effect.Effect<Rule | null, BackendApiError> {
+  return getRuleById(id).pipe(
+    Effect.map((row) => (row ? toRule(row) : null)),
+    Effect.mapError((e) => new BackendApiError({ message: e.message })),
+  )
 }
 
 export function searchBackend(q: string): Effect.Effect<SearchResult, BackendApiError> {
-  return Effect.tryPromise({
-    try: () => apiFetch<SearchResult>(`/search?q=${encodeURIComponent(q)}`),
-    catch: (error) =>
-      new BackendApiError({
-        message: error instanceof Error ? error.message : "Search failed",
-      }),
-  })
+  return searchPatternsAndRules(q).pipe(
+    Effect.map((result) => ({
+      patterns: result.patterns.map(toPattern),
+      rules: result.rules.map(toRule),
+    })),
+    Effect.mapError((e) => new BackendApiError({ message: e.message })),
+  )
 }
 
 /**

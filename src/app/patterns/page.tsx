@@ -1,5 +1,5 @@
 import { Effect } from "effect"
-import { PatternsList } from "@/components/PatternsList"
+import { PatternsBrowser } from "@/components/PatternsBrowser"
 import { fetchPatterns } from "@/services/BackendApi"
 import { buildMetadata } from "@/lib/seo"
 
@@ -28,7 +28,7 @@ export default async function PatternsPage() {
           {patterns.length} production-ready Effect.ts patterns
         </p>
       </div>
-      <PatternsList patterns={patterns} />
+      <PatternsBrowser patterns={patterns} />
     </div>
   )
 }

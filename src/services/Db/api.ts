@@ -12,10 +12,12 @@ import {
   consultingInquiries,
   apiKeys,
   analyticsEvents,
+  patterns,
+  rules,
 } from "@/db/schema"
 import type { WaitlistSource, AnalyticsEventType } from "@/types/strings"
 import type { DbError } from "@/services/Db/errors"
-import type { WaitlistSignup, ConsultingInquiry, DbUser, DbApiKey } from "@/services/Db/types"
+import type { WaitlistSignup, ConsultingInquiry, DbUser, DbApiKey, DbPattern, DbRule } from "@/services/Db/types"
 import { toDbError } from "@/services/Db/helpers"
 
 // ---------------------------------------------------------------------------
@@ -336,6 +338,110 @@ export function revokeApiKey(keyId: string, userId: string): Effect.Effect<DbApi
         created_at: row.createdAt.toISOString(),
         revoked_at: row.revokedAt?.toISOString() ?? null,
       } satisfies DbApiKey
+    },
+    catch: toDbError,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Patterns
+// ---------------------------------------------------------------------------
+
+function mapPattern(row: typeof patterns.$inferSelect): DbPattern {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    content: row.content,
+    category: row.category,
+    difficulty: row.difficulty,
+    tags: row.tags as readonly string[] | null,
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
+  }
+}
+
+export function getAllPatterns(): Effect.Effect<readonly DbPattern[], DbError> {
+  return Effect.tryPromise({
+    try: async () => {
+      const rows = await db.select().from(patterns).orderBy(patterns.title)
+      return rows.map(mapPattern)
+    },
+    catch: toDbError,
+  })
+}
+
+export function getPatternById(patternId: string): Effect.Effect<DbPattern | null, DbError> {
+  return Effect.tryPromise({
+    try: async () => {
+      const rows = await db.select().from(patterns).where(eq(patterns.id, patternId))
+      const row = rows[0]
+      if (!row) return null
+      return mapPattern(row)
+    },
+    catch: toDbError,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Rules
+// ---------------------------------------------------------------------------
+
+function mapRule(row: typeof rules.$inferSelect): DbRule {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    content: row.content,
+    category: row.category,
+    severity: row.severity,
+    tags: row.tags as readonly string[] | null,
+    created_at: row.createdAt.toISOString(),
+    updated_at: row.updatedAt.toISOString(),
+  }
+}
+
+export function getAllRules(): Effect.Effect<readonly DbRule[], DbError> {
+  return Effect.tryPromise({
+    try: async () => {
+      const rows = await db.select().from(rules).orderBy(rules.title)
+      return rows.map(mapRule)
+    },
+    catch: toDbError,
+  })
+}
+
+export function getRuleById(ruleId: string): Effect.Effect<DbRule | null, DbError> {
+  return Effect.tryPromise({
+    try: async () => {
+      const rows = await db.select().from(rules).where(eq(rules.id, ruleId))
+      const row = rows[0]
+      if (!row) return null
+      return mapRule(row)
+    },
+    catch: toDbError,
+  })
+}
+
+export function searchPatternsAndRules(query: string): Effect.Effect<{
+  readonly patterns: readonly DbPattern[]
+  readonly rules: readonly DbRule[]
+}, DbError> {
+  return Effect.tryPromise({
+    try: async () => {
+      const q = `%${query.toLowerCase()}%`
+
+      const patternRows = await db.select().from(patterns).where(
+        sql`lower(${patterns.title}) like ${q} or lower(${patterns.description}) like ${q}`
+      )
+      const ruleRows = await db.select().from(rules).where(
+        sql`lower(${rules.title}) like ${q} or lower(${rules.description}) like ${q}`
+      )
+
+      return {
+        patterns: patternRows.map(mapPattern),
+        rules: ruleRows.map(mapRule),
+      }
     },
     catch: toDbError,
   })

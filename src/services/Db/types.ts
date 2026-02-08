@@ -33,6 +33,30 @@ export interface DbUser {
   readonly updated_at: string
 }
 
+export interface DbPattern {
+  readonly id: string
+  readonly title: string
+  readonly description: string
+  readonly content: string
+  readonly category: string | null
+  readonly difficulty: string | null
+  readonly tags: readonly string[] | null
+  readonly created_at: string
+  readonly updated_at: string
+}
+
+export interface DbRule {
+  readonly id: string
+  readonly title: string
+  readonly description: string
+  readonly content: string
+  readonly category: string | null
+  readonly severity: string | null
+  readonly tags: readonly string[] | null
+  readonly created_at: string
+  readonly updated_at: string
+}
+
 export interface DbApiKey {
   readonly id: string
   readonly user_id: string
