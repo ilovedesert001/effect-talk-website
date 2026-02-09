@@ -48,9 +48,9 @@ export function TourCodeRunner({ code, readOnly = false }: TourCodeRunnerProps) 
 
   return (
     <div
-      className="h-full w-[380px] min-h-[500px] mx-auto flex flex-col rounded-md border border-border bg-background shadow-sm tour-code-runner"
+      className="h-full w-full min-h-[500px] flex flex-col rounded border border-border bg-background shadow-sm tour-code-runner"
     >
-      <div className="px-3 py-1.5 text-[0.65rem] font-medium border-b bg-muted/50">
+      <div className="px-1.5 py-0.5 text-[0.65rem] font-medium border-b bg-muted/50">
         Code
       </div>
       <SandpackProvider
@@ -88,7 +88,7 @@ export function TourCodeRunner({ code, readOnly = false }: TourCodeRunnerProps) 
               showReadOnly={false}
             />
           </div>
-          <div className="px-3 py-1.5 text-[0.65rem] font-medium border-y bg-muted/50">
+          <div className="px-1.5 py-0.5 text-[0.65rem] font-medium border-y bg-muted/50">
             Console
           </div>
           <div className="h-[140px] max-h-[140px] overflow-auto">

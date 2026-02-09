@@ -56,7 +56,7 @@ export function TourStep({ step, lessonSlug, steps, currentStepIndex }: TourStep
 
       {/* Right: Code Runner */}
       <div
-        className="flex flex-col items-center bg-muted/30 px-3 py-3 md:px-4 md:py-4"
+        className="flex flex-col items-stretch bg-muted/30 px-1 py-1 md:px-2 md:py-2"
         style={{ minHeight: "600px" }}
       >
         {step.concept_code && (
