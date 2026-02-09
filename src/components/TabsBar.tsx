@@ -14,6 +14,7 @@ interface TabItem {
 const tabs: readonly TabItem[] = [
   { label: "EffectPatterns CLI", href: "/cli", isLocked: false },
   { label: "EffectPatterns MCP Server", href: "/mcp", isLocked: false },
+  { label: "Effect Tour", href: "/tour", isLocked: false },
   { label: "EffectPatterns Playground", href: "/playground", isLocked: true },
   { label: "EffectTalk Code Review", href: "/code-review", isLocked: true },
 ]
@@ -26,7 +27,7 @@ export function TabsBar() {
       <div className="container px-4 md:px-6">
         <nav className="flex gap-0 overflow-x-auto" role="tablist">
           {tabs.map((tab) => {
-            const isActive = pathname === tab.href
+            const isActive = pathname === tab.href || (tab.href === "/tour" && pathname?.startsWith("/tour"))
             return (
               <Link
                 key={tab.href}

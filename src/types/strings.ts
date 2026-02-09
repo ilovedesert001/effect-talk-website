@@ -12,7 +12,7 @@ export type WaitlistSource = "playground" | "code_review"
 // Tab Types
 // ---------------------------------------------------------------------------
 
-export type TabType = "cli" | "mcp" | "playground" | "code-review"
+export type TabType = "cli" | "mcp" | "tour" | "playground" | "code-review"
 
 // ---------------------------------------------------------------------------
 // Analytics Event Types
@@ -23,6 +23,10 @@ export type AnalyticsEventType =
   | "consulting_submitted"
   | "tab_clicked"
   | "search_performed"
+  | "tour_started"
+  | "lesson_started"
+  | "step_completed"
+  | "lesson_completed"
 
 // ---------------------------------------------------------------------------
 // HTTP Method Types

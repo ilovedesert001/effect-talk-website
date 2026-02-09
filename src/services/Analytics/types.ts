@@ -26,8 +26,32 @@ export interface SearchPerformedEvent {
   readonly pageCount: number
 }
 
+export interface TourStartedEvent {
+  readonly type: Extract<AnalyticsEventType, "tour_started">
+}
+
+export interface LessonStartedEvent {
+  readonly type: Extract<AnalyticsEventType, "lesson_started">
+  readonly lessonSlug: string
+}
+
+export interface StepCompletedEvent {
+  readonly type: Extract<AnalyticsEventType, "step_completed">
+  readonly lessonSlug: string
+  readonly stepId: string
+}
+
+export interface LessonCompletedEvent {
+  readonly type: Extract<AnalyticsEventType, "lesson_completed">
+  readonly lessonSlug: string
+}
+
 export type AnalyticsEvent =
   | WaitlistSubmittedEvent
   | ConsultingSubmittedEvent
   | TabClickedEvent
   | SearchPerformedEvent
+  | TourStartedEvent
+  | LessonStartedEvent
+  | StepCompletedEvent
+  | LessonCompletedEvent

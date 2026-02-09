@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { ArrowRight, BookOpen, Terminal, Cpu, MessageSquare } from "lucide-react"
+import { ArrowRight, BookOpen, Terminal, Cpu, MessageSquare, GraduationCap } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
 
 export const metadata = buildMetadata({
@@ -30,7 +30,10 @@ export default function HomePage() {
             </Link>
           </Button>
           <Button size="lg" variant="outline" asChild>
-            <Link href="/cli">Get the CLI</Link>
+            <Link href="/tour">
+              Start Tour
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </Button>
         </div>
       </section>

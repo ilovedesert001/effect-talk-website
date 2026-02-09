@@ -26,11 +26,35 @@ const SearchPerformedSchema = Schema.Struct({
   pageCount: Schema.Number.pipe(Schema.int(), Schema.nonNegative()),
 })
 
+const TourStartedSchema = Schema.Struct({
+  type: Schema.Literal("tour_started"),
+})
+
+const LessonStartedSchema = Schema.Struct({
+  type: Schema.Literal("lesson_started"),
+  lessonSlug: Schema.String,
+})
+
+const StepCompletedSchema = Schema.Struct({
+  type: Schema.Literal("step_completed"),
+  lessonSlug: Schema.String,
+  stepId: Schema.String,
+})
+
+const LessonCompletedSchema = Schema.Struct({
+  type: Schema.Literal("lesson_completed"),
+  lessonSlug: Schema.String,
+})
+
 const EventSchema = Schema.Union(
   WaitlistSubmittedSchema,
   ConsultingSubmittedSchema,
   TabClickedSchema,
-  SearchPerformedSchema
+  SearchPerformedSchema,
+  TourStartedSchema,
+  LessonStartedSchema,
+  StepCompletedSchema,
+  LessonCompletedSchema
 )
 
 /**

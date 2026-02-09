@@ -302,4 +302,42 @@
   .prose-neutral a {
     @apply text-primary;
   }
+
+  /* Tour code runner - Sandpack font size and syntax highlighting */
+  .tour-code-runner .sp-code-editor {
+    font-size: 0.79em;
+  }
+  .tour-code-runner .sp-console {
+    font-size: 0.79em;
+  }
+
+  /* Sandpack syntax highlighting colors (light theme) */
+  .tour-code-runner .sp-code-editor .sp-syntax-keyword,
+  .tour-code-runner .sp-code-editor code .sp-syntax-keyword {
+    color: #cf222e !important;
+  }
+  .tour-code-runner .sp-code-editor .sp-syntax-string,
+  .tour-code-runner .sp-code-editor code .sp-syntax-string {
+    color: #00a99a !important;
+  }
+  .tour-code-runner .sp-code-editor .sp-syntax-comment,
+  .tour-code-runner .sp-code-editor code .sp-syntax-comment {
+    color: #8b949e !important;
+  }
+  .tour-code-runner .sp-code-editor .sp-syntax-punctuation,
+  .tour-code-runner .sp-code-editor code .sp-syntax-punctuation {
+    color: #8996a3 !important;
+  }
+  .tour-code-runner .sp-code-editor .sp-syntax-plain,
+  .tour-code-runner .sp-code-editor code .sp-syntax-plain {
+    color: #354150 !important;
+  }
+  .tour-code-runner .sp-code-editor .sp-syntax-property,
+  .tour-code-runner .sp-code-editor code .sp-syntax-property {
+    color: #0550ae !important;
+  }
+  .tour-code-runner .sp-code-editor .sp-syntax-static,
+  .tour-code-runner .sp-code-editor code .sp-syntax-static {
+    color: #6f42c1 !important;
+  }
 }

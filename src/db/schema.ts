@@ -5,7 +5,8 @@
  * Use `drizzle-kit generate` to create migrations from changes here.
  */
 
-import { pgTable, uuid, text, jsonb, timestamp, index } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, jsonb, timestamp, index, integer, uniqueIndex } from "drizzle-orm/pg-core"
+import { relations } from "drizzle-orm"
 
 // ---------------------------------------------------------------------------
 // Users (upserted from WorkOS GitHub OAuth)
@@ -116,3 +117,86 @@ export const analyticsEvents = pgTable("analytics_events", {
 }, (table) => [
   index("idx_events_type").on(table.eventType),
 ])
+
+// ---------------------------------------------------------------------------
+// Tour Lessons
+// ---------------------------------------------------------------------------
+
+export const tourLessons = pgTable("tour_lessons", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  orderIndex: integer("order_index").notNull(),
+  difficulty: text("difficulty").notNull(),
+  estimatedMinutes: integer("estimated_minutes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("idx_tour_lessons_order").on(table.orderIndex),
+])
+
+// ---------------------------------------------------------------------------
+// Tour Steps
+// ---------------------------------------------------------------------------
+
+export const tourSteps = pgTable("tour_steps", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  lessonId: uuid("lesson_id").notNull().references(() => tourLessons.id, { onDelete: "cascade" }),
+  orderIndex: integer("order_index").notNull(),
+  title: text("title").notNull(),
+  instruction: text("instruction").notNull(),
+  conceptCode: text("concept_code"),
+  conceptCodeLanguage: text("concept_code_language").default("typescript"),
+  solutionCode: text("solution_code"),
+  playgroundUrl: text("playground_url"),
+  hints: text("hints").array(),
+  feedbackOnComplete: text("feedback_on_complete"),
+  patternId: uuid("pattern_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_tour_steps_lesson").on(table.lessonId),
+])
+
+// ---------------------------------------------------------------------------
+// Tour Progress (user-scoped)
+// ---------------------------------------------------------------------------
+
+export const tourProgress = pgTable("tour_progress", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  stepId: uuid("step_id").notNull().references(() => tourSteps.id, { onDelete: "cascade" }),
+  status: text("status").notNull().default("not_started"),
+  feedback: text("feedback"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, (table) => [
+  index("idx_tour_progress_user").on(table.userId),
+  index("idx_tour_progress_step").on(table.stepId),
+])
+
+// ---------------------------------------------------------------------------
+// Tour Relations (for Drizzle relational queries)
+// ---------------------------------------------------------------------------
+
+export const tourLessonsRelations = relations(tourLessons, ({ many }) => ({
+  steps: many(tourSteps),
+}))
+
+export const tourStepsRelations = relations(tourSteps, ({ one, many }) => ({
+  lesson: one(tourLessons, {
+    fields: [tourSteps.lessonId],
+    references: [tourLessons.id],
+  }),
+  progress: many(tourProgress),
+}))
+
+export const tourProgressRelations = relations(tourProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [tourProgress.userId],
+    references: [users.id],
+  }),
+  step: one(tourSteps, {
+    fields: [tourProgress.stepId],
+    references: [tourSteps.id],
+  }),
+}))
