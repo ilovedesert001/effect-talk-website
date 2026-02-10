@@ -31,6 +31,7 @@ function toPattern(db: DbPattern): Pattern {
     category: db.category ?? undefined,
     difficulty: db.difficulty ?? undefined,
     tags: db.tags ?? undefined,
+    new: db.new,
   }
 }
 

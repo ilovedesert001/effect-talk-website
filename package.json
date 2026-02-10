@@ -14,8 +14,15 @@
     "test:coverage": "vitest run --config vitest.config.mts --coverage",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "bun run scripts/seed-patterns.ts"
+    "db:load:patterns": "bun run scripts/load-patterns.ts",
+    "db:seed:tour": "bun run scripts/seed-tour.ts",
+    "db:stage": "bun run scripts/load-patterns.ts && bun run scripts/seed-tour.ts",
+    "db:promote": "bun run scripts/promote.ts",
+    "db:promote:all": "bun run scripts/promote.ts all",
+    "db:promote:dry": "bun run scripts/promote.ts all --dry-run",
+    "db:check": "bun run scripts/check-db.ts"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",

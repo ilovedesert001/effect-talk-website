@@ -41,6 +41,7 @@ export interface DbPattern {
   readonly category: string | null
   readonly difficulty: string | null
   readonly tags: readonly string[] | null
+  readonly new: boolean
   readonly created_at: string
   readonly updated_at: string
 }

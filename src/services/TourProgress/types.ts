@@ -10,6 +10,7 @@ export interface TourLesson {
   readonly title: string
   readonly description: string
   readonly order_index: number
+  readonly group: string | null
   readonly difficulty: string
   readonly estimated_minutes: number | null
   readonly created_at: string

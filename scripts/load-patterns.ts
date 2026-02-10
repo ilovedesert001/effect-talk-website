@@ -1,15 +1,15 @@
 #!/usr/bin/env bun
 
 /**
- * Seed script: loads 216 patterns from Effect-Patterns project into the website database.
+ * Load patterns & rules from the Effect-Patterns project into STAGING tables.
  *
  * Reads from:
  *   - all-patterns.json (index with metadata)
  *   - content/published/patterns/**\/*.mdx (full content with code examples)
  *
- * Usage: bun run scripts/seed-patterns.ts
+ * Usage: bun run scripts/load-patterns.ts
  *
- * Set SKIP_DELETE=1 to insert without clearing existing patterns.
+ * After loading, run `bun run db:promote patterns` (and/or `rules`) to swap staging → live.
  */
 
 import { config } from "dotenv"
@@ -17,7 +17,9 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { readFile, readdir, stat } from "node:fs/promises"
 import { drizzle } from "drizzle-orm/node-postgres"
-import { patterns, rules } from "../src/db/schema"
+import { patternsStaging, rulesStaging, contentDeployments } from "../src/db/schema"
+import { patternId } from "./lib/deterministic-ids"
+import { sql } from "drizzle-orm"
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
 config({ path: path.join(rootDir, "..", ".env.local") })
@@ -86,12 +88,10 @@ function mdxToHtml(mdxContent: string): string {
   // Strip frontmatter
   const withoutFrontmatter = mdxContent.replace(/^---[\s\S]*?---\s*/, "")
 
-  // Simple markdown-to-HTML conversion for the content we have
   let html = withoutFrontmatter
 
   // ---------------------------------------------------------------------------
-  // Step 1: Extract code blocks and replace with placeholders so later
-  //         transforms (paragraphs, inline code, bold, etc.) don't mangle them.
+  // Step 1: Extract code blocks into placeholders (protects from later transforms)
   // ---------------------------------------------------------------------------
   const codeBlocks: string[] = []
   html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, (_match, lang, code) => {
@@ -107,14 +107,18 @@ function mdxToHtml(mdxContent: string): string {
   })
 
   // ---------------------------------------------------------------------------
-  // Step 2: Inline transforms (headings, inline code, bold, italic, lists)
+  // Step 2: Strip the first H1 (the page already renders pattern.title as H1)
+  // ---------------------------------------------------------------------------
+  html = html.replace(/^# .+$/m, "")
+
+  // ---------------------------------------------------------------------------
+  // Step 3: Inline transforms (headings, inline code, bold, italic)
   // ---------------------------------------------------------------------------
 
   // Headings
   html = html.replace(/^#### (.+)$/gm, "<h4>$1</h4>")
   html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>")
   html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>")
-  html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>")
 
   // Inline code
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>")
@@ -123,25 +127,41 @@ function mdxToHtml(mdxContent: string): string {
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
   html = html.replace(/\*(.+?)\*/g, "<em>$1</em>")
 
-  // Unordered lists (simple single-level)
-  html = html.replace(/^- (.+)$/gm, "<li>$1</li>")
-  html = html.replace(/(<li>[\s\S]*?<\/li>)/g, "<ul>$1</ul>")
-  // Collapse adjacent </ul><ul>
-  html = html.replace(/<\/ul>\s*<ul>/g, "\n")
+  // ---------------------------------------------------------------------------
+  // Step 4: Lists — unordered (- item) and ordered (1. item)
+  // ---------------------------------------------------------------------------
+
+  // Ordered lists: consecutive lines starting with `N. `
+  html = html.replace(/(?:^\d+\.\s+.+$\n?)+/gm, (block) => {
+    const items = block.trim().split("\n").map((line) => {
+      const content = line.replace(/^\d+\.\s+/, "")
+      return `<li>${content}</li>`
+    })
+    return `<ol>${items.join("\n")}</ol>`
+  })
+
+  // Unordered lists: consecutive lines starting with `- `
+  html = html.replace(/(?:^- .+$\n?)+/gm, (block) => {
+    const items = block.trim().split("\n").map((line) => {
+      const content = line.replace(/^- /, "")
+      return `<li>${content}</li>`
+    })
+    return `<ul>${items.join("\n")}</ul>`
+  })
 
   // ---------------------------------------------------------------------------
-  // Step 3: Paragraphs — split on blank lines, but placeholders are safe
+  // Step 5: Paragraphs — split on blank lines, skip already-wrapped blocks
   // ---------------------------------------------------------------------------
   html = html
     .split("\n\n")
     .map((block) => {
       const trimmed = block.trim()
       if (!trimmed) return ""
-      // Don't wrap blocks that are already HTML elements or code placeholders
       if (
         trimmed.startsWith("<h") ||
         trimmed.startsWith("<pre") ||
         trimmed.startsWith("<ul") ||
+        trimmed.startsWith("<ol") ||
         trimmed.startsWith("<li") ||
         trimmed.startsWith("<p") ||
         trimmed.startsWith("<!--CODE_BLOCK_")
@@ -154,7 +174,7 @@ function mdxToHtml(mdxContent: string): string {
     .join("\n")
 
   // ---------------------------------------------------------------------------
-  // Step 4: Restore code blocks from placeholders
+  // Step 6: Restore code blocks from placeholders
   // ---------------------------------------------------------------------------
   for (let i = 0; i < codeBlocks.length; i++) {
     html = html.replace(`<!--CODE_BLOCK_${i}-->`, codeBlocks[i])
@@ -181,15 +201,12 @@ async function seed() {
 
   console.log(`Found ${jsonData.patterns.length} patterns in JSON index`)
 
-  // Clear existing data (unless SKIP_DELETE=1)
-  if (!process.env.SKIP_DELETE) {
-    console.log("Clearing existing patterns...")
-    await db.delete(patterns)
-  } else {
-    console.log("Skipping delete (SKIP_DELETE=1)")
-  }
+  // Clear staging tables (always — staging is a scratch space)
+  console.log("Clearing staging tables...")
+  await db.delete(patternsStaging)
+  await db.delete(rulesStaging)
 
-  // Insert patterns
+  // Insert patterns into STAGING table
   let inserted = 0
   let skipped = 0
 
@@ -207,13 +224,15 @@ async function seed() {
     }
 
     try {
-      await db.insert(patterns).values({
+      await db.insert(patternsStaging).values({
+        id: patternId(p.id),
         title: p.title,
         description: p.description,
         content,
         category: p.category,
         difficulty: p.difficulty,
         tags: p.tags,
+        new: false,
       })
       inserted++
     } catch (err) {
@@ -222,18 +241,13 @@ async function seed() {
     }
   }
 
-  console.log(`Inserted ${inserted} patterns (${skipped} skipped)`)
+  console.log(`Staged ${inserted} patterns (${skipped} skipped)`)
 
   // Also load rules from the content/published/rules directory if it exists
   const rulesDir = path.join(EFFECT_PATTERNS_ROOT, "content/published/rules")
   const rulesDirExists = await stat(rulesDir).catch(() => null)
 
   if (rulesDirExists?.isDirectory()) {
-    if (!process.env.SKIP_DELETE) {
-      console.log("Clearing existing rules...")
-      await db.delete(rules)
-    }
-
     const ruleFiles = await readdir(rulesDir)
     const mdxRuleFiles = ruleFiles.filter((f) => f.endsWith(".mdx"))
     let rulesInserted = 0
@@ -261,7 +275,7 @@ async function seed() {
       const category = categoryMatch ? categoryMatch[1].trim() : "general"
 
       try {
-        await db.insert(rules).values({
+        await db.insert(rulesStaging).values({
           title,
           description,
           content,
@@ -274,12 +288,30 @@ async function seed() {
         console.error(`  Failed to insert rule "${title}":`, err)
       }
     }
-    console.log(`Inserted ${rulesInserted} rules`)
+    console.log(`Staged ${rulesInserted} rules`)
   } else {
     console.log("No rules directory found, skipping rules")
   }
 
-  console.log("Done!")
+  // Record deployments for both groups
+  await db.insert(contentDeployments).values({
+    tableGroup: "patterns",
+    status: "staged",
+    rowCount: inserted,
+    metadata: { patternsVersion: jsonData.version, lastUpdated: jsonData.lastUpdated },
+  })
+
+  await db.insert(contentDeployments).values({
+    tableGroup: "rules",
+    status: "staged",
+    rowCount: inserted,
+    metadata: {},
+  })
+
+  console.log("\nStaging complete! To promote to live, run:")
+  console.log("  bun run db:promote patterns")
+  console.log("  bun run db:promote rules")
+  console.log("  (or: bun run db:promote all)")
   process.exit(0)
 }
 

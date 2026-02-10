@@ -35,8 +35,13 @@ export function PatternCard({ pattern }: PatternCardProps) {
       <Card className="hover:bg-muted/50 hover:shadow-md transition-all duration-200 group h-full gap-4 py-4">
         {/* Header: category labels on top, then title + description */}
         <CardHeader className="pb-1 pt-1">
-          {(pattern.difficulty || pattern.category) && (
-            <div className="flex gap-1 mb-1">
+          {(pattern.new || pattern.difficulty || pattern.category) && (
+            <div className="flex flex-wrap gap-1 mb-1">
+              {pattern.new && (
+                <Badge variant="outline" className="text-xs bg-emerald-100 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300">
+                  New
+                </Badge>
+              )}
               {pattern.difficulty && (
                 <Badge variant="outline" className="text-xs bg-purple-100 dark:bg-purple-900/30 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300">
                   {pattern.difficulty}

@@ -36,6 +36,7 @@ export function TourLessonView({ lesson }: TourLessonViewProps) {
 
   return (
     <TourStep
+      key={currentStep.id}
       step={currentStep}
       lessonSlug={lesson.slug}
       steps={lesson.steps}

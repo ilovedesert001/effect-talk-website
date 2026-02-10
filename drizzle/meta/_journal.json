@@ -8,6 +8,20 @@
       "when": 1770595483387,
       "tag": "0000_small_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770685115226,
+      "tag": "0001_previous_stingray",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1770691046497,
+      "tag": "0002_lazy_zaladane",
+      "breakpoints": true
     }
   ]
 }

@@ -60,6 +60,7 @@ export function TourCodeRunner({ code, readOnly = false }: TourCodeRunnerProps) 
         customSetup={{
           dependencies: {
             effect: "latest",
+            "@effect/schema": "latest",
           },
           entry: "/index.ts",
         }}

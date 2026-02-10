@@ -16,12 +16,15 @@ interface PatternsSidebarProps {
   readonly categories: readonly FacetCount[]
   readonly difficulties: readonly FacetCount[]
   readonly tags: readonly FacetCount[]
+  readonly newCount: number
   readonly activeCategory: string | null
   readonly activeDifficulty: string | null
   readonly activeTags: readonly string[]
+  readonly activeNewOnly: boolean
   readonly onCategoryChange: (category: string | null) => void
   readonly onDifficultyChange: (difficulty: string | null) => void
   readonly onTagToggle: (tag: string) => void
+  readonly onNewFilterChange: (newOnly: boolean) => void
   readonly onClearAll: () => void
   readonly className?: string
 }
@@ -32,17 +35,24 @@ export function PatternsSidebar({
   categories,
   difficulties,
   tags,
+  newCount,
   activeCategory,
   activeDifficulty,
   activeTags,
+  activeNewOnly,
   onCategoryChange,
   onDifficultyChange,
   onTagToggle,
+  onNewFilterChange,
   onClearAll,
   className,
 }: PatternsSidebarProps) {
   const [showAllTags, setShowAllTags] = useState(false)
-  const hasActiveFilters = activeCategory !== null || activeDifficulty !== null || activeTags.length > 0
+  const hasActiveFilters =
+    activeCategory !== null ||
+    activeDifficulty !== null ||
+    activeTags.length > 0 ||
+    activeNewOnly
 
   const visibleTags = showAllTags ? tags : tags.slice(0, MAX_VISIBLE_TAGS)
   const hasMoreTags = tags.length > MAX_VISIBLE_TAGS
@@ -108,6 +118,49 @@ export function PatternsSidebar({
                   </Badge>
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        <Separator />
+
+        {/* New */}
+        {newCount > 0 && (
+          <div>
+            <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+              New
+            </h3>
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => onNewFilterChange(false)}
+                className={cn(
+                  "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between",
+                  !activeNewOnly
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted/50 text-muted-foreground"
+                )}
+              >
+                <span>All</span>
+                <Badge variant="secondary" className="text-xs">
+                  {categories.reduce((sum, c) => sum + c.count, 0)}
+                </Badge>
+              </button>
+              <button
+                type="button"
+                onClick={() => onNewFilterChange(!activeNewOnly)}
+                className={cn(
+                  "w-full text-left px-2 py-1.5 rounded-md text-sm transition-colors flex items-center justify-between",
+                  activeNewOnly
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted/50 text-muted-foreground"
+                )}
+              >
+                <span>New only</span>
+                <Badge variant="secondary" className="text-xs shrink-0 ml-2">
+                  {newCount}
+                </Badge>
+              </button>
             </div>
           </div>
         )}

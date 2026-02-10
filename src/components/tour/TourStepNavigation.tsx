@@ -42,7 +42,7 @@ export function TourStepNavigation({
         href="/tour"
         className="font-medium hover:underline"
       >
-        Contents
+        Lessons
       </Link>
       <span className="text-muted-foreground">—</span>
       {hasNext && nextStep ? (

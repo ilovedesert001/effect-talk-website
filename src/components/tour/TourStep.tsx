@@ -1,8 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { BookOpen } from "lucide-react"
 import { TourCodeRunner } from "@/components/tour/TourCodeRunner"
 import { TourStepNavigation } from "@/components/tour/TourStepNavigation"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { TourStep as TourStepType } from "@/services/TourProgress/types"
 
 interface TourStepProps {
@@ -13,7 +16,12 @@ interface TourStepProps {
 }
 
 export function TourStep({ step, lessonSlug, steps, currentStepIndex }: TourStepProps) {
-  const [showSolution, setShowSolution] = useState(false)
+  const hasSolution = Boolean(step.solution_code)
+
+  // Radix Tabs use useId() which causes hydration mismatch in Next.js 15.5+ / React 19.2.
+  // Defer Tabs render until after mount so server and first client render match.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
@@ -44,6 +52,17 @@ export function TourStep({ step, lessonSlug, steps, currentStepIndex }: TourStep
           </div>
         )}
 
+        {/* Related Pattern */}
+        {step.pattern_id && (
+          <Link
+            href={`/patterns/${step.pattern_id}?from=${encodeURIComponent(lessonSlug)}&step=${step.order_index}`}
+            className="mt-4 flex items-center gap-1.5 text-[0.65rem] text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <BookOpen className="h-3.5 w-3.5" />
+            View related pattern
+          </Link>
+        )}
+
         {/* Navigation */}
         <div className="mt-5 pt-4 border-t">
           <TourStepNavigation
@@ -60,33 +79,51 @@ export function TourStep({ step, lessonSlug, steps, currentStepIndex }: TourStep
         style={{ minHeight: "600px" }}
       >
         {step.concept_code && (
-          <div className="w-full flex-1" style={{ minHeight: "500px", height: "100%" }}>
-            <TourCodeRunner code={step.concept_code} readOnly={true} />
-          </div>
-        )}
-
-        {step.solution_code && (
-          <div className="border-t">
-            <button
-              type="button"
-              onClick={() => setShowSolution(!showSolution)}
-              className="w-full px-5 py-2.5 text-[0.65rem] font-medium text-left hover:bg-muted/50 transition-colors flex items-center justify-between"
-            >
-              <span>{showSolution ? "Hide Solution" : "Show Solution"}</span>
-              <span className="text-muted-foreground text-xs">
-                {showSolution ? "▲" : "▼"}
-              </span>
-            </button>
-            {showSolution && (
-              <div className="w-full border-t border-dashed" style={{ minHeight: "400px" }}>
-                <TourCodeRunner code={step.solution_code} readOnly={true} />
-                {step.feedback_on_complete && (
-                  <div className="px-5 pb-5 md:px-8 md:pb-8">
-                    <p className="mt-4 text-sm text-muted-foreground italic">
-                      {step.feedback_on_complete}
-                    </p>
+          <div className="w-full flex-1 flex flex-col min-h-[500px]" style={{ minHeight: "600px" }}>
+            {hasSolution ? (
+              mounted ? (
+                <Tabs defaultValue="anti-pattern" className="flex flex-col flex-1 min-h-0">
+                  <TabsList variant="line" className="h-8 shrink-0 w-full justify-start gap-0 rounded-none border-b bg-transparent p-0">
+                    <TabsTrigger value="anti-pattern" className="text-[0.65rem] px-3 py-1.5 after:hidden data-[state=active]:font-semibold">
+                      Anti-pattern
+                    </TabsTrigger>
+                    <TabsTrigger value="solution" className="text-[0.65rem] px-3 py-1.5 after:hidden data-[state=active]:font-semibold">
+                      Solution
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="anti-pattern" className="flex-1 min-h-0 mt-0">
+                    <div className="h-full min-h-[500px]">
+                      <TourCodeRunner code={step.concept_code} readOnly={true} />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="solution" className="flex-1 min-h-0 mt-0">
+                    <div className="h-full min-h-[500px] flex flex-col">
+                      {step.solution_code && (
+                        <TourCodeRunner code={step.solution_code} readOnly={true} />
+                      )}
+                      {step.feedback_on_complete && (
+                        <div className="px-3 py-2 border-t bg-muted/20">
+                          <p className="text-[0.65rem] text-muted-foreground italic">
+                            {step.feedback_on_complete}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              ) : (
+                <div className="flex flex-col flex-1 min-h-0">
+                  <div className="h-8 shrink-0 w-full border-b bg-transparent" />
+                  <div className="flex-1 min-h-0 mt-0">
+                    <div className="h-full min-h-[500px]">
+                      <TourCodeRunner code={step.concept_code} readOnly={true} />
+                    </div>
                   </div>
-                )}
+                </div>
+              )
+            ) : (
+              <div className="w-full flex-1" style={{ minHeight: "500px", height: "100%" }}>
+                <TourCodeRunner code={step.concept_code} readOnly={true} />
               </div>
             )}
           </div>

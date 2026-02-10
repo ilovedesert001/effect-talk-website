@@ -29,6 +29,7 @@ function mapLesson(row: typeof tourLessons.$inferSelect): TourLesson {
     title: row.title,
     description: row.description,
     order_index: row.orderIndex,
+    group: row.group ?? null,
     difficulty: row.difficulty,
     estimated_minutes: row.estimatedMinutes,
     created_at: row.createdAt.toISOString(),

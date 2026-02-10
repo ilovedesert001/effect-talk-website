@@ -2,10 +2,10 @@ import { Effect } from "effect"
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { PatternContent } from "@/components/PatternContent"
 import { fetchPattern, fetchPatternIds } from "@/services/BackendApi"
 import { buildMetadata } from "@/lib/seo"
-import { ArrowRight } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import type { Metadata } from "next"
 
 /**
@@ -28,6 +28,7 @@ export async function generateStaticParams() {
 
 interface PatternPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ from?: string; step?: string }>
 }
 
 export async function generateMetadata({ params }: PatternPageProps): Promise<Metadata> {
@@ -48,8 +49,9 @@ export async function generateMetadata({ params }: PatternPageProps): Promise<Me
   })
 }
 
-export default async function PatternDetailPage({ params }: PatternPageProps) {
+export default async function PatternDetailPage({ params, searchParams }: PatternPageProps) {
   const { id } = await params
+  const { from: lessonSlug, step: stepParam } = await searchParams
   const pattern = await Effect.runPromise(
     fetchPattern(id).pipe(
       Effect.catchAll(() => Effect.succeed(null))
@@ -60,8 +62,23 @@ export default async function PatternDetailPage({ params }: PatternPageProps) {
     notFound()
   }
 
+  const backHref =
+    lessonSlug && stepParam
+      ? `/tour/${lessonSlug}?step=${stepParam}`
+      : lessonSlug
+        ? `/tour/${lessonSlug}`
+        : "/tour"
+
   return (
     <div className="container px-4 md:px-6 py-10 max-w-3xl">
+      <Link
+        href={backHref}
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to Tour
+      </Link>
+
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-2">
           {pattern.category && (
@@ -75,36 +92,8 @@ export default async function PatternDetailPage({ params }: PatternPageProps) {
         <p className="text-muted-foreground mt-2">{pattern.description}</p>
       </div>
 
-      {pattern.tags && pattern.tags.length > 0 && (
-        <div className="flex gap-1.5 mb-6">
-          {pattern.tags.map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
-      )}
-
-      {/* Pattern content rendered as HTML */}
-      <article className="prose prose-neutral dark:prose-invert max-w-none">
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: Pattern content is stored as HTML from MDX conversion in seed script */}
-        <div dangerouslySetInnerHTML={{ __html: pattern.content }} />
-      </article>
-
-      {/* Practice in Tour CTA */}
-      <div className="mt-8 p-6 rounded-lg border bg-muted/50">
-        <h3 className="text-lg font-semibold mb-2">Practice This Pattern</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Want to practice this pattern hands-on? Check out our interactive tour where you can learn Effect.ts
-          step-by-step with real code examples.
-        </p>
-        <Link href="/tour">
-          <Button variant="outline">
-            Explore the Tour
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
-        </Link>
-      </div>
+      {/* Pattern content with syntax-highlighted code blocks */}
+      <PatternContent html={pattern.content} />
     </div>
   )
 }

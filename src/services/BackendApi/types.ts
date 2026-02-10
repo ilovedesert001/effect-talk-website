@@ -10,6 +10,7 @@ export interface Pattern {
   readonly category?: string
   readonly tags?: readonly string[]
   readonly difficulty?: string
+  readonly new?: boolean
 }
 
 export interface Rule {

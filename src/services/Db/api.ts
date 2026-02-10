@@ -356,6 +356,7 @@ function mapPattern(row: typeof patterns.$inferSelect): DbPattern {
     category: row.category,
     difficulty: row.difficulty,
     tags: row.tags as readonly string[] | null,
+    new: row.new,
     created_at: row.createdAt.toISOString(),
     updated_at: row.updatedAt.toISOString(),
   }

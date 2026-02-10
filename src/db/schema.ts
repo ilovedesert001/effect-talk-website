@@ -3,9 +3,22 @@
  *
  * This is the single source of truth for the database schema.
  * Use `drizzle-kit generate` to create migrations from changes here.
+ *
+ * ## Blue-Green Table Swap Strategy
+ *
+ * Content tables (patterns, rules, tour_lessons, tour_steps) use a blue-green
+ * deployment pattern. Each has a `_staging` counterpart with identical columns.
+ *
+ * Workflow:
+ *  1. Seed scripts write to `_staging` tables
+ *  2. Validate the staging data
+ *  3. Atomic swap: rename live → retired, staging → live
+ *  4. Drop retired table when confident
+ *
+ * The `content_deployments` table provides an audit trail of every swap.
  */
 
-import { pgTable, uuid, text, jsonb, timestamp, index, integer, uniqueIndex } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, jsonb, timestamp, index, integer, uniqueIndex, boolean } from "drizzle-orm/pg-core"
 import { relations } from "drizzle-orm"
 
 // ---------------------------------------------------------------------------
@@ -68,7 +81,7 @@ export const apiKeys = pgTable("api_keys", {
 ])
 
 // ---------------------------------------------------------------------------
-// Patterns (Effect.ts patterns catalog)
+// Patterns (Effect.ts patterns catalog) — LIVE table
 // ---------------------------------------------------------------------------
 
 export const patterns = pgTable("patterns", {
@@ -79,6 +92,7 @@ export const patterns = pgTable("patterns", {
   category: text("category"),
   difficulty: text("difficulty"),
   tags: text("tags").array(),
+  new: boolean("new").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, (table) => [
@@ -86,8 +100,22 @@ export const patterns = pgTable("patterns", {
   index("idx_patterns_difficulty").on(table.difficulty),
 ])
 
+// Patterns — STAGING table (identical columns, no indexes needed during seed)
+export const patternsStaging = pgTable("patterns_staging", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  category: text("category"),
+  difficulty: text("difficulty"),
+  tags: text("tags").array(),
+  new: boolean("new").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 // ---------------------------------------------------------------------------
-// Rules (Effect.ts rules catalog)
+// Rules (Effect.ts rules catalog) — LIVE table
 // ---------------------------------------------------------------------------
 
 export const rules = pgTable("rules", {
@@ -105,6 +133,19 @@ export const rules = pgTable("rules", {
   index("idx_rules_severity").on(table.severity),
 ])
 
+// Rules — STAGING table
+export const rulesStaging = pgTable("rules_staging", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  content: text("content").notNull(),
+  category: text("category"),
+  severity: text("severity"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 // ---------------------------------------------------------------------------
 // Analytics events
 // ---------------------------------------------------------------------------
@@ -119,7 +160,7 @@ export const analyticsEvents = pgTable("analytics_events", {
 ])
 
 // ---------------------------------------------------------------------------
-// Tour Lessons
+// Tour Lessons — LIVE table
 // ---------------------------------------------------------------------------
 
 export const tourLessons = pgTable("tour_lessons", {
@@ -128,6 +169,7 @@ export const tourLessons = pgTable("tour_lessons", {
   title: text("title").notNull(),
   description: text("description").notNull(),
   orderIndex: integer("order_index").notNull(),
+  group: text("group"),
   difficulty: text("difficulty").notNull(),
   estimatedMinutes: integer("estimated_minutes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -135,8 +177,21 @@ export const tourLessons = pgTable("tour_lessons", {
   uniqueIndex("idx_tour_lessons_order").on(table.orderIndex),
 ])
 
+// Tour Lessons — STAGING table
+export const tourLessonsStaging = pgTable("tour_lessons_staging", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  orderIndex: integer("order_index").notNull(),
+  group: text("group"),
+  difficulty: text("difficulty").notNull(),
+  estimatedMinutes: integer("estimated_minutes"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 // ---------------------------------------------------------------------------
-// Tour Steps
+// Tour Steps — LIVE table
 // ---------------------------------------------------------------------------
 
 export const tourSteps = pgTable("tour_steps", {
@@ -157,8 +212,25 @@ export const tourSteps = pgTable("tour_steps", {
   index("idx_tour_steps_lesson").on(table.lessonId),
 ])
 
+// Tour Steps — STAGING table (no FK constraint; lessonId links resolved at swap)
+export const tourStepsStaging = pgTable("tour_steps_staging", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  lessonId: uuid("lesson_id").notNull(),
+  orderIndex: integer("order_index").notNull(),
+  title: text("title").notNull(),
+  instruction: text("instruction").notNull(),
+  conceptCode: text("concept_code"),
+  conceptCodeLanguage: text("concept_code_language").default("typescript"),
+  solutionCode: text("solution_code"),
+  playgroundUrl: text("playground_url"),
+  hints: text("hints").array(),
+  feedbackOnComplete: text("feedback_on_complete"),
+  patternId: uuid("pattern_id"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
 // ---------------------------------------------------------------------------
-// Tour Progress (user-scoped)
+// Tour Progress (user-scoped) — NOT swappable, references live tables
 // ---------------------------------------------------------------------------
 
 export const tourProgress = pgTable("tour_progress", {
@@ -173,6 +245,21 @@ export const tourProgress = pgTable("tour_progress", {
   index("idx_tour_progress_user").on(table.userId),
   index("idx_tour_progress_step").on(table.stepId),
 ])
+
+// ---------------------------------------------------------------------------
+// Content Deployments — audit trail for blue-green swaps
+// ---------------------------------------------------------------------------
+
+export const contentDeployments = pgTable("content_deployments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tableGroup: text("table_group").notNull(), // "patterns", "rules", "tour"
+  status: text("status").notNull().default("staged"), // "staged" | "live" | "retired"
+  rowCount: integer("row_count"),
+  metadata: jsonb("metadata").default({}), // arbitrary details (e.g. version, git sha)
+  stagedAt: timestamp("staged_at", { withTimezone: true }).notNull().defaultNow(),
+  promotedAt: timestamp("promoted_at", { withTimezone: true }),
+  retiredAt: timestamp("retired_at", { withTimezone: true }),
+})
 
 // ---------------------------------------------------------------------------
 // Tour Relations (for Drizzle relational queries)

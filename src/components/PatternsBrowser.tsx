@@ -31,14 +31,17 @@ export function PatternsBrowser({ patterns }: PatternsBrowserProps) {
   const activeCategory = searchParams.get("category") ?? null
   const activeDifficulty = searchParams.get("difficulty")?.toLowerCase() ?? null
   const activeTags = searchParams.getAll("tag")
+  const activeNewOnly = searchParams.get("new") === "1"
 
   // Compute available facets from ALL patterns (not filtered subset)
-  const { categories, difficulties, tags } = useMemo(() => {
+  const { categories, difficulties, tags, newCount } = useMemo(() => {
     const categoryMap = new Map<string, number>()
     const difficultyMap = new Map<string, number>()
     const tagMap = new Map<string, number>()
+    let newPatternCount = 0
 
     for (const pattern of patterns) {
+      if (pattern.new) newPatternCount++
       if (pattern.category) {
         categoryMap.set(pattern.category, (categoryMap.get(pattern.category) ?? 0) + 1)
       }
@@ -62,6 +65,7 @@ export function PatternsBrowser({ patterns }: PatternsBrowserProps) {
       categories: toFacetArray(categoryMap),
       difficulties: toFacetArray(difficultyMap),
       tags: toFacetArray(tagMap),
+      newCount: newPatternCount,
     }
   }, [patterns])
 
@@ -95,15 +99,21 @@ export function PatternsBrowser({ patterns }: PatternsBrowserProps) {
         }
       }
 
+      // New-only filter
+      if (activeNewOnly && !pattern.new) {
+        return false
+      }
+
       return true
     })
-  }, [patterns, query, activeCategory, activeDifficulty, activeTags])
+  }, [patterns, query, activeCategory, activeDifficulty, activeTags, activeNewOnly])
 
   // Update URL params when filters change
   const updateSearchParams = (updates: {
     category?: string | null
     difficulty?: string | null
     tag?: string | null | string[]
+    new?: boolean | null
   }) => {
     const params = new URLSearchParams(searchParams.toString())
 
@@ -124,15 +134,21 @@ export function PatternsBrowser({ patterns }: PatternsBrowserProps) {
     }
 
     if (updates.tag !== undefined) {
-      // Remove all existing tag params
       params.delete("tag")
-      // Add new tags if provided
       if (Array.isArray(updates.tag) && updates.tag.length > 0) {
         for (const tag of updates.tag) {
           params.append("tag", tag)
         }
       } else if (typeof updates.tag === "string") {
         params.append("tag", updates.tag)
+      }
+    }
+
+    if (updates.new !== undefined) {
+      if (updates.new) {
+        params.set("new", "1")
+      } else {
+        params.delete("new")
       }
     }
 
@@ -155,8 +171,17 @@ export function PatternsBrowser({ patterns }: PatternsBrowserProps) {
     updateSearchParams({ tag: newTags.length > 0 ? newTags : null })
   }
 
+  const handleNewFilterChange = (newOnly: boolean) => {
+    updateSearchParams({ new: newOnly || null })
+  }
+
+  const hasActiveFilters =
+    activeCategory !== null ||
+    activeDifficulty !== null ||
+    activeTags.length > 0 ||
+    activeNewOnly
+
   const handleClearAll = () => {
-    // Clear all filters including search query - navigate to clean URL
     router.replace("/patterns", { scroll: false })
   }
 
@@ -169,12 +194,15 @@ export function PatternsBrowser({ patterns }: PatternsBrowserProps) {
             categories={categories}
             difficulties={difficulties}
             tags={tags}
+            newCount={newCount}
             activeCategory={activeCategory}
             activeDifficulty={activeDifficulty}
             activeTags={activeTags}
+            activeNewOnly={activeNewOnly}
             onCategoryChange={handleCategoryChange}
             onDifficultyChange={handleDifficultyChange}
             onTagToggle={handleTagToggle}
+            onNewFilterChange={handleNewFilterChange}
             onClearAll={handleClearAll}
           />
         </div>
@@ -212,7 +240,7 @@ export function PatternsBrowser({ patterns }: PatternsBrowserProps) {
         ) : filteredPatterns.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-muted-foreground">No patterns found matching your filters.</p>
-            {(query || activeCategory || activeDifficulty || activeTags.length > 0) && (
+            {(query || activeCategory || activeDifficulty || activeTags.length > 0 || activeNewOnly) && (
               <button
                 type="button"
                 onClick={handleClearAll}
