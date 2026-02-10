@@ -1,6 +1,7 @@
 import { Effect } from "effect"
-import Link from "next/link"
 import { getAllLessons, getLessonWithSteps } from "@/services/TourProgress"
+import { getCurrentUser } from "@/services/Auth"
+import { TourLessonList } from "@/components/tour/TourLessonList"
 import { TourStartedTracker } from "@/components/tour/TourStartedTracker"
 import { buildMetadata } from "@/lib/seo"
 
@@ -11,43 +12,24 @@ export const metadata = buildMetadata({
 
 export const revalidate = 300
 
-const GROUP_ORDER = [
-  "Fundamentals",
-  "Composition",
-  "Concurrency",
-  "Data & I/O",
-  "Validation",
-] as const
-
-function groupLessons<T extends { lesson: { group: string | null } }>(
-  items: T[]
-): Map<string | null, T[]> {
-  const map = new Map<string | null, T[]>()
-  for (const item of items) {
-    const key = item.lesson.group
-    const list = map.get(key) ?? []
-    list.push(item)
-    map.set(key, list)
-  }
-  return map
-}
-
 export default async function TourPage() {
   const lessons = await Effect.runPromise(
     getAllLessons().pipe(Effect.catchAll(() => Effect.succeed([] as const)))
   )
 
-  // Fetch step counts for each lesson
-  const lessonsWithCounts = await Promise.all(
-    lessons.map(async (lesson) => {
-      const full = await Effect.runPromise(
-        getLessonWithSteps(lesson.slug).pipe(Effect.catchAll(() => Effect.succeed(null)))
+  const lessonsWithSteps = await Promise.all(
+    lessons.map((lesson) =>
+      Effect.runPromise(
+        getLessonWithSteps(lesson.slug).pipe(
+          Effect.catchAll(() => Effect.succeed(null))
+        )
       )
-      return { lesson, stepCount: full?.steps.length ?? 0 }
-    })
+    )
+  ).then((results) =>
+    results.filter((r): r is NonNullable<typeof r> => r !== null)
   )
 
-  const byGroup = groupLessons(lessonsWithCounts)
+  const currentUser = await getCurrentUser()
 
   return (
     <>
@@ -62,81 +44,10 @@ export default async function TourPage() {
         {lessons.length === 0 ? (
           <p className="text-muted-foreground">No lessons available yet. Check back soon!</p>
         ) : (
-          <div className="space-y-10">
-            {GROUP_ORDER.map((groupName) => {
-              const items = byGroup.get(groupName)
-              if (!items || items.length === 0) return null
-
-              return (
-                <section key={groupName}>
-                  <h2 className="text-lg font-semibold tracking-tight mb-4 text-muted-foreground">
-                    {groupName}
-                  </h2>
-                  <ol className="space-y-4">
-                    {items.map(({ lesson, stepCount }) => (
-                      <li key={lesson.id}>
-                        <Link
-                          href={`/tour/${lesson.slug}`}
-                          className="group block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <span className="font-medium group-hover:text-primary transition-colors">
-                                {lesson.order_index}. {lesson.title}
-                              </span>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {lesson.description}
-                              </p>
-                            </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap mt-1">
-                              {stepCount} {stepCount === 1 ? "step" : "steps"}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ol>
-                </section>
-              )
-            })}
-            {/* Uncategorized lessons */}
-            {(() => {
-              const uncategorized = byGroup.get(null) ?? []
-              if (uncategorized.length === 0) return null
-
-              return (
-                <section>
-                  <h2 className="text-lg font-semibold tracking-tight mb-4 text-muted-foreground">
-                    More
-                  </h2>
-                  <ol className="space-y-4">
-                    {uncategorized.map(({ lesson, stepCount }) => (
-                      <li key={lesson.id}>
-                        <Link
-                          href={`/tour/${lesson.slug}`}
-                          className="group block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <span className="font-medium group-hover:text-primary transition-colors">
-                                {lesson.order_index}. {lesson.title}
-                              </span>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {lesson.description}
-                              </p>
-                            </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap mt-1">
-                              {stepCount} {stepCount === 1 ? "step" : "steps"}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ol>
-                </section>
-              )
-            })()}
-          </div>
+          <TourLessonList
+            lessons={lessonsWithSteps}
+            isLoggedIn={Boolean(currentUser)}
+          />
         )}
       </div>
     </>
