@@ -7,6 +7,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import { buildMetadata } from "@/lib/seo"
 
+export const dynamic = "force-dynamic"
+
 export const metadata = buildMetadata({
   title: "Sign In",
   description: "Sign in to EffectTalk with your GitHub account.",
@@ -76,8 +78,9 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
                 <code className="text-xs">WORKOS_CLIENT_ID</code>,{" "}
                 <code className="text-xs">WORKOS_API_KEY</code>,{" "}
                 <code className="text-xs">WORKOS_COOKIE_PASSWORD</code> (32+ chars), and{" "}
-                <code className="text-xs">NEXT_PUBLIC_WORKOS_REDIRECT_URI</code> in{" "}
-                <code className="text-xs">.env.local</code>.
+                <code className="text-xs">NEXT_PUBLIC_WORKOS_REDIRECT_URI</code>{" "}
+                in <code className="text-xs">.env.local</code> for local dev.{" "}
+                <strong>If this is the deployed site</strong>, set them in Vercel → Project → Settings → Environment Variables (Production), then redeploy.
               </AlertDescription>
             </Alert>
           )}

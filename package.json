@@ -22,7 +22,8 @@
     "db:promote": "bun run scripts/promote.ts",
     "db:promote:all": "bun run scripts/promote.ts all",
     "db:promote:dry": "bun run scripts/promote.ts all --dry-run",
-    "db:check": "bun run scripts/check-db.ts"
+    "db:check": "bun run scripts/check-db.ts",
+    "env:check": "bun run scripts/check-env-for-deploy.ts"
   },
   "dependencies": {
     "@codesandbox/sandpack-react": "^2.20.0",

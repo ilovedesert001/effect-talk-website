@@ -4,6 +4,8 @@ Guidance for working in this repo. See also docs/env.md, docs/deployment.md, and
 
 ## Environment files
 
+**The env files are set up correctly. Do not modify `.env`, `.env.example`, or `.env.local` unless the user explicitly asks to add a new variable or rotate a secret.**
+
 Follow the conventions in **docs/env.md**. Summary:
 
 ### File roles
@@ -26,3 +28,4 @@ Follow the conventions in **docs/env.md**. Summary:
 - Do not add code that reads env from files other than via `process.env` (Next.js and the app already load `.env` and `.env.local`).
 - Do not suggest committing `.env.local` or putting production secrets in `.env`.
 - When introducing a new environment variable, add it to both `.env` and `.env.example` with a safe default or placeholder, and update docs/env.md if it affects the rules or setup.
+- **Leave env files alone** — Do not change them unless the user explicitly requests it.

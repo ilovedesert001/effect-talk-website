@@ -1,5 +1,7 @@
 # Environment files
 
+**The env files are set up correctly. Do not modify `.env`, `.env.example`, or `.env.local` unless you are explicitly adding a new variable or rotating a secret.**
+
 How they work and how to manage them.
 
 ## How env files work
@@ -21,9 +23,9 @@ How they work and how to manage them.
 1. **Do not put real secrets in `.env`** — It is committed. Use only safe defaults and placeholders (e.g. `WORKOS_COOKIE_PASSWORD=xxx`, `API_KEY_PEPPER=change-me-in-production`).
 2. **Do not commit `.env.local`** — It is gitignored. It holds real API keys, cookie passwords, and DB URLs.
 3. **Keep `.env` and `.env.example` in sync** — Same keys, same order. When you add a new env var the app needs, add it to both (with a safe default in `.env`, same placeholder or value in `.env.example`).
-4. **Set up `.env.local` once** — Copy from `.env.example`, fill in real values, then leave it. Only change when you add a new required variable or rotate a secret.
+4. **Leave env files alone** — They are set up correctly. Do not edit `.env`, `.env.example`, or `.env.local` unless you are adding a new variable or rotating a secret.
 5. **WorkOS:** In `.env.local`, `WORKOS_COOKIE_PASSWORD` must be **at least 32 characters**. Generate with: `openssl rand -base64 24`.
-6. **CLI deploy:** Before running `vercel` or `vercel --prod`, ensure `.env.local` has real values for WorkOS and any other features you need in the deployed app; the build reads `.env` and `.env.local` on your machine.
+6. **CLI deploy:** Before running `vercel` or `vercel --prod`, ensure `.env.local` has real values for WorkOS and any other features you need in the deployed app; the build reads `.env` and `.env.local` on your machine. Run **`bun run env:check`** to validate required vars (no secrets printed).
 
 ## One-time setup
 

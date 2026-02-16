@@ -55,14 +55,19 @@ function verifySessionValue(signedValue: string, secret: string): string | null 
 // WorkOS AuthKit (SDK) configuration check
 // ---------------------------------------------------------------------------
 
+/** Read env at runtime (avoids build-time inlining so Vercel runtime env is used). */
+function getEnv(key: string): string | undefined {
+  return process.env[key]
+}
+
 /**
  * Check if WorkOS AuthKit SDK is properly configured (required env vars for @workos-inc/authkit-nextjs).
  */
 export function isWorkOSConfigured(): boolean {
-  const apiKey = process.env.WORKOS_API_KEY
-  const clientId = process.env.WORKOS_CLIENT_ID
-  const redirectUri = process.env.NEXT_PUBLIC_WORKOS_REDIRECT_URI ?? process.env.WORKOS_REDIRECT_URI
-  const cookiePassword = process.env.WORKOS_COOKIE_PASSWORD
+  const apiKey = getEnv("WORKOS_API_KEY")
+  const clientId = getEnv("WORKOS_CLIENT_ID")
+  const redirectUri = getEnv("NEXT_PUBLIC_WORKOS_REDIRECT_URI") ?? getEnv("WORKOS_REDIRECT_URI")
+  const cookiePassword = getEnv("WORKOS_COOKIE_PASSWORD")
   return Boolean(
     apiKey &&
       !apiKey.includes(WORKOS_PLACEHOLDER_CHECK) &&

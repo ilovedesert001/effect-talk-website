@@ -2,7 +2,9 @@
 
 Use this checklist before deploying to staging or production (e.g. Vercel + Neon).
 
-**CLI deploy:** Build runs locally. Ensure `.env.local` has real values (see docs/env.md). Then run `vercel` or `vercel --prod`.
+**CLI deploy:** Build runs locally. Run `bun run env:check` to ensure `.env.local` has real values (see docs/env.md). Then run `vercel` or `vercel --prod`.
+
+**Deployed site (Vercel):** At runtime the app reads env from **Vercel**, not from `.env.local`. If sign-in shows "WorkOS AuthKit is not configured" on the live site, add `WORKOS_CLIENT_ID`, `WORKOS_API_KEY`, `WORKOS_COOKIE_PASSWORD` (32+ chars), `WORKOS_REDIRECT_URI`, and `NEXT_PUBLIC_WORKOS_REDIRECT_URI` in Vercel → Project → Settings → Environment Variables for **Production**, then redeploy.
 
 ## Required environment variables
 
