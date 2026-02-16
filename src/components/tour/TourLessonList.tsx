@@ -38,107 +38,67 @@ export function TourLessonList({ lessons, isLoggedIn }: TourLessonListProps) {
     return lesson.steps.every((step) => completedStepIds.has(step.id))
   }
 
+  // Build a flat, display-ordered list with sequential numbering
+  const numberedGroups: { groupName: string; items: { lesson: TourLessonWithSteps; displayIndex: number }[] }[] = []
+  let counter = 1
+  for (const groupName of GROUP_ORDER) {
+    const items = byGroup.get(groupName)
+    if (!items || items.length === 0) continue
+    const numbered = items.map((lesson) => ({ lesson, displayIndex: counter++ }))
+    numberedGroups.push({ groupName, items: numbered })
+  }
+  const uncategorized = byGroup.get(null) ?? []
+  if (uncategorized.length > 0) {
+    const numbered = uncategorized.map((lesson) => ({ lesson, displayIndex: counter++ }))
+    numberedGroups.push({ groupName: "More", items: numbered })
+  }
+
   return (
     <div className="space-y-10">
-      {GROUP_ORDER.map((groupName) => {
-        const items = byGroup.get(groupName)
-        if (!items || items.length === 0) return null
+      {numberedGroups.map(({ groupName, items }) => (
+        <section key={groupName}>
+          <h2 className="text-lg font-semibold tracking-tight mb-4 text-muted-foreground">
+            {groupName}
+          </h2>
+          <ol className="space-y-4">
+            {items.map(({ lesson, displayIndex }) => {
+              const done = isLessonComplete(lesson)
+              const stepCount = lesson.steps.length
 
-        return (
-          <section key={groupName}>
-            <h2 className="text-lg font-semibold tracking-tight mb-4 text-muted-foreground">
-              {groupName}
-            </h2>
-            <ol className="space-y-4">
-              {items.map((lesson) => {
-                const done = isLessonComplete(lesson)
-                const stepCount = lesson.steps.length
-
-                return (
-                  <li key={lesson.id}>
-                    <Link
-                      href={`/tour/${lesson.slug}`}
-                      className="group block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <span className="font-medium group-hover:text-primary transition-colors">
-                            {lesson.order_index}. {lesson.title}
-                          </span>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {lesson.description}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 mt-1">
-                          {done && (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-500 font-medium">
-                              <Check className="h-3.5 w-3.5" />
-                              Done
-                            </span>
-                          )}
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {stepCount} {stepCount === 1 ? "step" : "steps"}
-                          </span>
-                        </div>
+              return (
+                <li key={lesson.id}>
+                  <Link
+                    href={`/tour/${lesson.slug}`}
+                    className="group block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <span className="font-medium group-hover:text-primary transition-colors">
+                          {displayIndex}. {lesson.title}
+                        </span>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {lesson.description}
+                        </p>
                       </div>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ol>
-          </section>
-        )
-      })}
-      {/* Uncategorized lessons */}
-      {(() => {
-        const uncategorized = byGroup.get(null) ?? []
-        if (uncategorized.length === 0) return null
-
-        return (
-          <section>
-            <h2 className="text-lg font-semibold tracking-tight mb-4 text-muted-foreground">
-              More
-            </h2>
-            <ol className="space-y-4">
-              {uncategorized.map((lesson) => {
-                const done = isLessonComplete(lesson)
-                const stepCount = lesson.steps.length
-
-                return (
-                  <li key={lesson.id}>
-                    <Link
-                      href={`/tour/${lesson.slug}`}
-                      className="group block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <span className="font-medium group-hover:text-primary transition-colors">
-                            {lesson.order_index}. {lesson.title}
+                      <div className="flex items-center gap-2 shrink-0 mt-1">
+                        {done && (
+                          <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-500 font-medium">
+                            <Check className="h-3.5 w-3.5" />
+                            Done
                           </span>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {lesson.description}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0 mt-1">
-                          {done && (
-                            <span className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-500 font-medium">
-                              <Check className="h-3.5 w-3.5" />
-                              Done
-                            </span>
-                          )}
-                          <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {stepCount} {stepCount === 1 ? "step" : "steps"}
-                          </span>
-                        </div>
+                        )}
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {stepCount} {stepCount === 1 ? "step" : "steps"}
+                        </span>
                       </div>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ol>
-          </section>
-        )
-      })()}
+                    </div>
+                  </Link>
+                </li>
+              )
+            })}
+          </ol>
+        </section>
+      ))}
     </div>
   )
 }
