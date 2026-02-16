@@ -2,13 +2,20 @@
 
 import { useMemo } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { PatternsSearch } from "@/components/PatternsSearch"
 import { PatternsSidebar } from "@/components/PatternsSidebar"
 import { PatternCard } from "@/components/PatternCard"
 import { Badge } from "@/components/ui/badge"
 import type { Pattern } from "@/services/BackendApi"
 import { cn } from "@/lib/utils"
-import { difficultyDisplayLabel, sortDifficultiesByDisplayOrder } from "@/lib/difficulty"
+import {
+  difficultyDisplayLabel,
+  sortDifficultiesByDisplayOrder,
+  DIFFICULTY_DISPLAY_ORDER,
+} from "@/lib/difficulty"
+
+const SORT_BEGINNER_FIRST = "beginner-first"
+const SORT_SENIOR_FIRST = "senior-first"
+type SortOrder = typeof SORT_BEGINNER_FIRST | typeof SORT_SENIOR_FIRST
 
 interface PatternsBrowserProps {
   readonly patterns: readonly Pattern[]
@@ -36,14 +43,26 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
   const activeDifficulty = searchParams.get("difficulty")?.toLowerCase() ?? null
   const activeTags = searchParams.getAll("tag")
   const activeNewOnly = searchParams.get("new") === "1"
+  const sortOrder: SortOrder =
+    searchParams.get("sort") === SORT_SENIOR_FIRST ? SORT_SENIOR_FIRST : SORT_BEGINNER_FIRST
 
-  // Compute available facets from ALL patterns (not filtered subset)
-  const { categories, difficulties, newCount } = useMemo(() => {
+  // Patterns matching the search query (before category/difficulty/new filters).
+  // Facet counts are derived from this set so search narrows all counts.
+  const searchFilteredPatterns = useMemo(() => {
+    if (!query) return patterns
+    return patterns.filter((pattern) => {
+      const searchable = `${pattern.title} ${pattern.description} ${pattern.tags?.join(" ") ?? ""}`.toLowerCase()
+      return searchable.includes(query)
+    })
+  }, [patterns, query])
+
+  // Compute facet counts from the search-filtered subset
+  const { categories, difficulties, newCount, totalAfterSearch } = useMemo(() => {
     const categoryMap = new Map<string, number>()
     const difficultyMap = new Map<string, number>()
     let newPatternCount = 0
 
-    for (const pattern of patterns) {
+    for (const pattern of searchFilteredPatterns) {
       if (pattern.new) newPatternCount++
       if (pattern.category) {
         categoryMap.set(pattern.category, (categoryMap.get(pattern.category) ?? 0) + 1)
@@ -66,8 +85,9 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
       categories: toFacetArray(categoryMap),
       difficulties: orderedDifficulties,
       newCount: newPatternCount,
+      totalAfterSearch: searchFilteredPatterns.length,
     }
-  }, [patterns])
+  }, [searchFilteredPatterns])
 
   // Filter patterns client-side
   const filteredPatterns = useMemo(() => {
@@ -108,12 +128,35 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
     })
   }, [patterns, query, activeCategory, activeDifficulty, activeTags, activeNewOnly])
 
+  // Sort filtered patterns by difficulty (beginner → senior or senior → beginner)
+  const difficultyOrderMap = useMemo(() => {
+    const m = new Map<string, number>()
+    DIFFICULTY_DISPLAY_ORDER.forEach((value, index) => m.set(value, index))
+    m.set("senior", 2) // alias for "advanced"
+    return m
+  }, [])
+
+  const sortedPatterns = useMemo(() => {
+    const getOrder = (p: Pattern): number =>
+      difficultyOrderMap.get(p.difficulty?.toLowerCase() ?? "") ?? -1
+    const order = [...filteredPatterns].sort((a, b) => {
+      const ia = getOrder(a)
+      const ib = getOrder(b)
+      if (ia === -1 && ib === -1) return 0
+      if (ia === -1) return 1
+      if (ib === -1) return -1
+      return sortOrder === SORT_SENIOR_FIRST ? ib - ia : ia - ib
+    })
+    return order
+  }, [filteredPatterns, sortOrder, difficultyOrderMap])
+
   // Update URL params when filters change
   const updateSearchParams = (updates: {
     category?: string | null
     difficulty?: string | null
     tag?: string | null | string[]
     new?: boolean | null
+    sort?: SortOrder | null
   }) => {
     const params = new URLSearchParams(searchParams.toString())
 
@@ -152,6 +195,14 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
       }
     }
 
+    if (updates.sort !== undefined) {
+      if (updates.sort && updates.sort !== SORT_BEGINNER_FIRST) {
+        params.set("sort", updates.sort)
+      } else {
+        params.delete("sort")
+      }
+    }
+
     router.replace(`?${params.toString()}`, { scroll: false })
   }
 
@@ -187,9 +238,38 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
 
       {/* Main content area */}
       <div className="flex-1 min-w-0">
+        {/* Sort by difficulty - top of browser */}
         {patterns.length > 0 && (
           <div className="mb-4">
-            <PatternsSearch />
+            <h3 className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+              Sort by difficulty
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => updateSearchParams({ sort: SORT_BEGINNER_FIRST })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors",
+                  sortOrder === SORT_BEGINNER_FIRST
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted/50 text-muted-foreground"
+                )}
+              >
+                Beginner → Senior
+              </button>
+              <button
+                type="button"
+                onClick={() => updateSearchParams({ sort: SORT_SENIOR_FIRST })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors",
+                  sortOrder === SORT_SENIOR_FIRST
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "hover:bg-muted/50 text-muted-foreground"
+                )}
+              >
+                Senior → Beginner
+              </button>
+            </div>
           </div>
         )}
         {/* Result count */}
@@ -226,7 +306,7 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
               >
                 <span>All</span>
                 <Badge variant="secondary" className="text-xs">
-                  {patterns.length}
+                  {totalAfterSearch}
                 </Badge>
               </button>
               <button
@@ -314,7 +394,7 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
           </div>
         ) : (
           <div className="grid gap-3">
-            {filteredPatterns.map((pattern) => (
+            {sortedPatterns.map((pattern) => (
               <PatternCard key={pattern.id} pattern={pattern} />
             ))}
           </div>
