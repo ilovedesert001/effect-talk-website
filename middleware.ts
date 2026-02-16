@@ -1,4 +1,6 @@
 import { authkitMiddleware } from "@workos-inc/authkit-nextjs"
+// Validate required env on every request (fail fast if missing)
+import "@/lib/env"
 
 /**
  * WorkOS AuthKit middleware: handles session management and token refresh.

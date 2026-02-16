@@ -18,7 +18,7 @@ To run Postgres locally for development and integration tests:
    ```bash
    bun run db:push
    ```
-4. (Optional) Run integration tests: `RUN_INTEGRATION_TESTS=1 bun run test:run`
+4. (Optional) Run integration tests: `RUN_INTEGRATION_TESTS=1 bun run test:run` (use a dedicated test database only—never point `DATABASE_URL` at production; tests truncate app tables).
 
 ## Sign-in (WorkOS AuthKit)
 
@@ -56,5 +56,7 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Before deploying to staging or production, see **[docs/deployment.md](docs/deployment.md)** for the required environment variables (including `DATABASE_URL` at build time) and WorkOS setup.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Effect, Schema, Either } from "effect"
 import { trackEvent, type AnalyticsEvent } from "@/services/Analytics"
+import {
+  PostHogAnalytics,
+  analyticsEventToPostHog,
+} from "@/services/PostHog"
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rateLimit"
 import { formatSchemaErrors } from "@/lib/schema"
 
@@ -98,8 +102,18 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const event = decoded.right as AnalyticsEvent
+
+  const program = Effect.gen(function* () {
+    yield* trackEvent(event)
+    const posthog = yield* PostHogAnalytics
+    const { eventName, properties } = analyticsEventToPostHog(event)
+    yield* posthog.capture(eventName, properties)
+    yield* posthog.flush()
+  }).pipe(Effect.provide(PostHogAnalytics.Default))
+
   try {
-    await Effect.runPromise(trackEvent(decoded.right as AnalyticsEvent))
+    await Effect.runPromise(program)
     return NextResponse.json({ success: true }, { headers: rateLimitHeaders })
   } catch (error) {
     console.error("Analytics event error:", error)

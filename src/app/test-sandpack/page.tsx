@@ -1,44 +1,15 @@
-"use client"
+import { notFound } from "next/navigation"
+import { TestSandpackClient } from "./TestSandpackClient"
 
-import { Sandpack } from "@codesandbox/sandpack-react"
-
-const testCode = `import { Effect } from "effect"
-
-const program = Effect.gen(function* () {
-  yield* Effect.log("Hello from Effect!")
-  const value = yield* Effect.succeed(42)
-  yield* Effect.log(\`The answer is: \${value}\`)
-  return value
-})
-
-Effect.runSync(program)
-`
-
+/** Only available when APP_ENV=local (or NODE_ENV=development). Returns 404 in production/staging. */
 export default function TestSandpackPage() {
-  return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">Sandpack + Effect.js Test</h1>
-      <p className="mb-4 text-muted-foreground">
-        Testing if Effect.js imports and runs correctly in Sandpack.
-      </p>
-      <Sandpack
-        template="vanilla-ts"
-        customSetup={{
-          dependencies: {
-            effect: "latest"
-          },
-          entry: "/index.ts"
-        }}
-        files={{
-          "/index.ts": testCode
-        }}
-        options={{
-          showConsole: true,
-          showTabs: false,
-          editorHeight: 300,
-          editorWidthPercentage: 50,
-        }}
-      />
-    </div>
-  )
+  const appEnv = process.env.APP_ENV as string | undefined
+  const isDev = process.env.NODE_ENV === "development"
+  if (appEnv === "production" || appEnv === "staging") {
+    notFound()
+  }
+  if (!isDev && appEnv !== "local") {
+    notFound()
+  }
+  return <TestSandpackClient />
 }

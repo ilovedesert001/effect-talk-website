@@ -10,7 +10,16 @@ import {
 } from "@/types/constants"
 
 function getPepper(): string {
-  return process.env.API_KEY_PEPPER ?? DEFAULT_API_KEY_PEPPER
+  const raw = process.env.API_KEY_PEPPER ?? DEFAULT_API_KEY_PEPPER
+  const appEnv = process.env.APP_ENV as "local" | "staging" | "production" | undefined
+  if (appEnv === "production" || appEnv === "staging") {
+    if (!raw || raw === DEFAULT_API_KEY_PEPPER) {
+      throw new Error(
+        "API_KEY_PEPPER must be set to a strong secret in production/staging (e.g. openssl rand -base64 32). Do not use the default."
+      )
+    }
+  }
+  return raw
 }
 
 /**

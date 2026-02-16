@@ -88,7 +88,13 @@ export async function setSessionCookie(userId: string): Promise<void> {
   const appEnv = (process.env.APP_ENV as AppEnvironment | undefined) ?? DEFAULT_APP_ENV
   const secret = getSessionSigningSecret()
   if (!secret) {
-    console.warn("setSessionCookie: missing SESSION_COOKIE_SECRET (or valid WORKOS_COOKIE_PASSWORD)")
+    if (appEnv === "production" || appEnv === "staging") {
+      console.warn(
+        "Production: session cookie secret is missing or too short (min 32 chars). Set WORKOS_COOKIE_PASSWORD. Session cookie fallback will not work."
+      )
+    } else {
+      console.warn("setSessionCookie: missing SESSION_COOKIE_SECRET (or valid WORKOS_COOKIE_PASSWORD)")
+    }
     return
   }
 

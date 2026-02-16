@@ -18,7 +18,8 @@ function optionalEnv(key: string, fallback: string): string {
 
 /** Server-only env vars. Do NOT import this file in client components. */
 export const env = {
-  BACKEND_API_BASE_URL: requireEnv("BACKEND_API_BASE_URL"),
+  /** Optional: used only if an external backend API is configured; pattern/rule data comes from DB. */
+  BACKEND_API_BASE_URL: optionalEnv("BACKEND_API_BASE_URL", "http://localhost:4000"),
   DATABASE_URL: requireEnv("DATABASE_URL"),
   WORKOS_API_KEY: requireEnv("WORKOS_API_KEY"),
   WORKOS_CLIENT_ID: requireEnv("WORKOS_CLIENT_ID"),

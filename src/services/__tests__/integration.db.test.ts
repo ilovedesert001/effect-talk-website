@@ -1,8 +1,14 @@
 /**
- * Integration tests for Db, Analytics, and ApiKeys using the real database.
- * No mocks. Set RUN_INTEGRATION_TESTS=1 and DATABASE_URL to run against production.
- * Skipped when RUN_INTEGRATION_TESTS is not set (avoids loading DB client).
- * When RUN_INTEGRATION_TESTS=1 but DB is unreachable, tests are skipped with a message.
+ * Integration tests for Db, Analytics, and ApiKeys using a real database.
+ *
+ * Use a dedicated test database only. Never set DATABASE_URL to your production
+ * or staging database—these tests TRUNCATE users, api_keys, waitlist_signups,
+ * consulting_inquiries, and analytics_events, which would destroy production data.
+ *
+ * To run: set RUN_INTEGRATION_TESTS=1 and DATABASE_URL to a test Postgres instance
+ * (e.g. a separate Neon branch or local Docker). Skipped when RUN_INTEGRATION_TESTS
+ * is not set. If APP_ENV=production or DATABASE_URL looks like production (e.g.
+ * neon.tech), tests are skipped and truncation is never run.
  *
  * Pattern/rules tests were removed—they assumed a dedicated test DB with truncation
  * and direct writes. Production has effect_patterns (read-only), rules (write-locked),
@@ -14,25 +20,40 @@ import { Effect } from "effect"
 import { sql } from "drizzle-orm"
 
 const runIntegrationTests = process.env.RUN_INTEGRATION_TESTS === "1"
+/** Production-like hosts: do not truncate or run destructive tests. */
+const PRODUCTION_URL_PATTERNS = ["neon.tech", "neon.build", ".neon.azure"]
+
+function isProductionLikeDb(): boolean {
+  if (process.env.APP_ENV === "production" || process.env.APP_ENV === "staging") return true
+  const url = process.env.DATABASE_URL ?? ""
+  return PRODUCTION_URL_PATTERNS.some((p) => url.includes(p))
+}
+
 let dbAvailable = false
 
 describe("Db + Analytics + ApiKeys integration (real DB)", () => {
   beforeAll(async () => {
     if (!runIntegrationTests) return
+    if (isProductionLikeDb()) {
+      console.warn(
+        "Integration tests skipped: DATABASE_URL or APP_ENV looks like production. Use a dedicated test database only."
+      )
+      return
+    }
     try {
       const { db } = await import("../../db/client")
       await db.execute(sql`SELECT 1`)
       dbAvailable = true
     } catch (err) {
       console.warn(
-        "Integration tests skipped: database unavailable (set DATABASE_URL to a running Postgres to run them).",
+        "Integration tests skipped: database unavailable (set DATABASE_URL to a test Postgres instance to run them).",
         err instanceof Error ? err.message : err
       )
     }
   })
 
   beforeEach(async () => {
-    if (!runIntegrationTests || !dbAvailable) return
+    if (!runIntegrationTests || !dbAvailable || isProductionLikeDb()) return
     const { db } = await import("../../db/client")
     await db.execute(
       sql`TRUNCATE analytics_events, api_keys, consulting_inquiries, waitlist_signups, users RESTART IDENTITY CASCADE`

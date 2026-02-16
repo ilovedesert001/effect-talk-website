@@ -7,13 +7,16 @@ import { hashToken, generateToken } from "@/services/ApiKeys/helpers"
 
 describe("ApiKeys helpers", () => {
   const originalPepper = process.env.API_KEY_PEPPER
+  const originalAppEnv = process.env.APP_ENV
 
   beforeEach(() => {
     process.env.API_KEY_PEPPER = "test-pepper"
+    process.env.APP_ENV = "local"
   })
 
   afterEach(() => {
     process.env.API_KEY_PEPPER = originalPepper
+    process.env.APP_ENV = originalAppEnv
   })
 
   describe("generateToken", () => {
@@ -69,6 +72,19 @@ describe("ApiKeys helpers", () => {
       const hash = hashToken(token)
 
       expect(hash).toMatch(/^[a-f0-9]{64}$/)
+    })
+
+    it("throws in production when pepper is default or missing", () => {
+      process.env.APP_ENV = "production"
+      process.env.API_KEY_PEPPER = "default-pepper-change-me"
+      expect(() => hashToken("ek_test123456789012345678901234567890")).toThrow(
+        /API_KEY_PEPPER must be set/
+      )
+
+      process.env.API_KEY_PEPPER = ""
+      expect(() => hashToken("ek_test123456789012345678901234567890")).toThrow(
+        /API_KEY_PEPPER must be set/
+      )
     })
   })
 })
