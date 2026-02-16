@@ -2,6 +2,8 @@
 
 Use this checklist before deploying to staging or production (e.g. Vercel + Neon).
 
+**CLI deploy:** Build runs locally. Ensure `.env.local` has real values (see docs/env.md). Then run `vercel` or `vercel --prod`.
+
 ## Required environment variables
 
 Set these in Vercel (or your host) for the **build** and **runtime** environments.

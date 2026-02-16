@@ -57,6 +57,6 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Before deploying to staging or production, see **[docs/deployment.md](docs/deployment.md)** for the required environment variables (including `DATABASE_URL` at build time) and WorkOS setup.
+Before deploying to staging or production, see **[docs/deployment.md](docs/deployment.md)** for environment variables and WorkOS setup. For env file setup (including CLI deploy), see **[docs/env.md](docs/env.md)**.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
