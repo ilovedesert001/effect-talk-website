@@ -26,8 +26,9 @@ export const GET = handleAuth({
       await setSessionCookie(dbUser.id)
       console.log("[Auth callback] User upserted and session cookie set for:", user.email, "DB ID:", dbUser.id)
     } catch (error) {
-      console.error("Auth callback: user upsert failed", error)
-      if (error instanceof Error && error.cause) console.error("Cause:", error.cause)
+      const err = error instanceof Error ? error : new Error(String(error))
+      console.error("[Auth callback] upsert/session failed:", err.message, err.name)
+      if (err.cause) console.error("[Auth callback] cause:", err.cause)
       throw error
     }
   },
