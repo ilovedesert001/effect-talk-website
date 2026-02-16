@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { PatternsSearch } from "@/components/PatternsSearch"
 import { Filter, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -48,6 +49,9 @@ export function PatternsSidebar({
           )}
         </div>
 
+        {/* Search */}
+        <PatternsSearch />
+
         {/* Categories */}
         {categories.length > 0 && (
           <div>
@@ -66,7 +70,7 @@ export function PatternsSidebar({
                 )}
               >
                 <span>All</span>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                   {categories.reduce((sum, cat) => sum + cat.count, 0)}
                 </Badge>
               </button>
@@ -82,8 +86,8 @@ export function PatternsSidebar({
                       : "hover:bg-muted/50 text-muted-foreground"
                   )}
                 >
-                  <span className="truncate">{cat.value}</span>
-                  <Badge variant="secondary" className="text-xs shrink-0 ml-2">
+                  <span className="truncate text-blue-900 dark:text-blue-300">{cat.value}</span>
+                  <Badge variant="secondary" className="text-xs shrink-0 ml-2 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
                     {cat.count}
                   </Badge>
                 </button>

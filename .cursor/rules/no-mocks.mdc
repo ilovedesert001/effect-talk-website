@@ -1,0 +1,28 @@
+---
+description: Never use mocks in tests; use real dependencies or integration tests
+alwaysApply: true
+---
+
+# No Mocks in Tests
+
+**Never use mocks.** Do not use `vi.mock`, `jest.mock`, or any test doubles (fake implementations, stubs, or mocks) when writing tests.
+
+## Why
+
+We always spend more time debugging the mocks than the code we are testing. Mocks drift from real behavior, hide integration bugs, and add maintenance cost without proportional benefit.
+
+## What to Do Instead
+
+- **Integration tests**: Run against real dependencies (database, APIs, file system) with test config or a dedicated test environment. Use `RUN_INTEGRATION_TESTS=1` and a test database when the project supports it.
+- **Real services**: Use the actual Db, Email, Analytics (or other) services with test credentials or in-memory/local backends where the project provides them.
+- **Custom test helpers**: Build real test data, test containers, or shared configs—not mocks—to isolate or speed up tests when needed.
+
+## Rule
+
+Do not add or suggest tests that use:
+
+- `vi.mock(...)` / `jest.mock(...)`
+- Mock return values or stub implementations that replace real modules
+- Any "fake" or "mock" implementation of a dependency
+
+Prefer tests that call real code paths with real (or test-configured) dependencies.
