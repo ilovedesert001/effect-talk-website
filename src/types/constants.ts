@@ -61,6 +61,7 @@ export const WORKOS_PLACEHOLDER_CHECK = "xxx" as const
 // ---------------------------------------------------------------------------
 
 export const EMAIL_FROM_ADDRESS = "EffectTalk <noreply@effecttalk.com>" as const
+export const FEEDBACK_RECIPIENT_EMAIL = "paul@effecttalk.com" as const
 export const EMAIL_PATTERNS_LINK = "https://effecttalk.com/patterns" as const
 export const BUSINESS_DAYS_RESPONSE_TIME = 2
 

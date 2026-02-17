@@ -50,6 +50,18 @@ export const consultingInquiries = pgTable("consulting_inquiries", {
 })
 
 // ---------------------------------------------------------------------------
+// Feedback (user feedback; no login required)
+// ---------------------------------------------------------------------------
+
+export const feedback = pgTable("feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name"),
+  email: text("email").notNull(),
+  message: text("message").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+// ---------------------------------------------------------------------------
 // API keys (user-scoped)
 // ---------------------------------------------------------------------------
 
