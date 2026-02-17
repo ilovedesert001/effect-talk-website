@@ -35,7 +35,7 @@
         "sonner": "^2.0.7",
         "sugar-high": "^0.9.5",
         "tailwind-merge": "^3.4.1",
-        "vercel": "^50.18.0",
+        "vercel": "^50.18.1",
       },
       "devDependencies": {
         "@opentelemetry/sdk-trace-base": "^2.5.1",
@@ -2503,7 +2503,7 @@
 
     "uuid": ["uuid@11.1.0", "", { "bin": { "uuid": "dist/esm/bin/uuid" } }, "sha512-0/A9rDy9P7cJ+8w1c9WD9V//9Wj15Ce2MPz8Ri6032usz+NfePxx5AcN3bN+r6ZL6jEo066/yNYB3tn4pQEx+A=="],
 
-    "vercel": ["vercel@50.18.0", "", { "dependencies": { "@vercel/backends": "0.0.33", "@vercel/blob": "1.0.2", "@vercel/build-utils": "13.4.0", "@vercel/detect-agent": "1.1.0", "@vercel/elysia": "0.1.36", "@vercel/express": "0.1.45", "@vercel/fastify": "0.1.39", "@vercel/fun": "1.3.0", "@vercel/go": "3.4.1", "@vercel/h3": "0.1.45", "@vercel/hono": "0.2.39", "@vercel/hydrogen": "1.3.5", "@vercel/koa": "0.1.19", "@vercel/nestjs": "0.2.40", "@vercel/next": "4.15.28", "@vercel/node": "5.6.3", "@vercel/python": "6.13.0", "@vercel/redwood": "2.4.9", "@vercel/remix-builder": "5.5.10", "@vercel/ruby": "2.3.1", "@vercel/rust": "1.0.5", "@vercel/static-build": "2.8.37", "chokidar": "4.0.0", "esbuild": "0.27.0", "form-data": "^4.0.0", "jose": "5.9.6", "luxon": "^3.4.0", "proxy-agent": "6.4.0" }, "bin": { "vc": "dist/vc.js", "vercel": "dist/vc.js" } }, "sha512-bKmch/S/FFc12L0vK/Ryv9sLPscWGkQwBvi92PzmEmb3tpIToz7RKb/07Er06rOIHQxlRkSW99crp/O/f3LrJg=="],
+    "vercel": ["vercel@50.18.1", "", { "dependencies": { "@vercel/backends": "0.0.33", "@vercel/blob": "1.0.2", "@vercel/build-utils": "13.4.0", "@vercel/detect-agent": "1.1.0", "@vercel/elysia": "0.1.36", "@vercel/express": "0.1.45", "@vercel/fastify": "0.1.39", "@vercel/fun": "1.3.0", "@vercel/go": "3.4.1", "@vercel/h3": "0.1.45", "@vercel/hono": "0.2.39", "@vercel/hydrogen": "1.3.5", "@vercel/koa": "0.1.19", "@vercel/nestjs": "0.2.40", "@vercel/next": "4.15.28", "@vercel/node": "5.6.3", "@vercel/python": "6.13.0", "@vercel/redwood": "2.4.9", "@vercel/remix-builder": "5.5.10", "@vercel/ruby": "2.3.1", "@vercel/rust": "1.0.5", "@vercel/static-build": "2.8.37", "chokidar": "4.0.0", "esbuild": "0.27.0", "form-data": "^4.0.0", "jose": "5.9.6", "luxon": "^3.4.0", "proxy-agent": "6.4.0" }, "bin": { "vc": "dist/vc.js", "vercel": "dist/vc.js" } }, "sha512-T2lppUnGqIeowcDXtJNyVJA98KiSb1/X3Mz1JXJYQljSNba+iilZUXVhtFYjE7EMkYAT+rknmwCIbKz9+8fVaQ=="],
 
     "vfile": ["vfile@6.0.3", "", { "dependencies": { "@types/unist": "^3.0.0", "vfile-message": "^4.0.0" } }, "sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q=="],
 
