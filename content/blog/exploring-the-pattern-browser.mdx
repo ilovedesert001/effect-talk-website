@@ -4,86 +4,76 @@ date: 2025-02-10
 excerpt: "A walkthrough of the EffectTalk pattern browser — search, filter, sort, and study 300+ production-ready Effect patterns."
 ---
 
-The pattern browser at [/patterns](/patterns) is the core of EffectTalk. It's where 300+ production-ready Effect patterns live, organized so you can find exactly what you need without scrolling through a flat list or guessing at category names.
+The pattern browser at [/patterns](/patterns) is the core of EffectTalk. It's where 300+ production-ready Effect patterns live, organized so you can find what you need without scrolling a flat list.
 
-This post walks through how to use it — search, filters, sorting, pattern cards, and the detail view. If you haven't visited the patterns page yet, open it in another tab and follow along.
+This post walks through how to use it: search, filters, sorting, pattern cards, and the detail view. If you haven't visited the patterns page yet, open it in another tab and follow along.
 
 ## The Layout
 
-The browser uses a two-column layout on desktop: a sidebar on the left for category filters and search, and the main area on the right for sort controls, active filters, and the pattern grid. On mobile, the sidebar stacks above the grid.
+On desktop, the browser uses a two-column layout: a sidebar on the left for search and categories, and the main area on the right for sort controls, active filters, and the pattern grid. On mobile, the sidebar stacks above the grid.
 
-{/* TODO: Screenshot 1 — Full pattern browser page showing the sidebar with categories, the search bar, and the pattern grid with several cards visible. Desktop width. */}
+<!-- Screenshot: Full pattern browser page (desktop), showing sidebar + search + several cards in the grid. -->
 
-At the top of the main area you'll see the total count — something like "Showing all 312 patterns" — which updates live as you apply filters.
+At the top of the main area you'll see the live count (e.g. "Showing all 309 patterns"), which updates as you apply filters.
 
 ## Search
 
-The search bar sits at the top of the sidebar. Type anything and results update instantly — there's no submit button and no round-trip to the server. The entire pattern set is loaded once and filtered client-side, so search feels immediate.
+The search bar sits at the top of the sidebar. Type anything and results update immediately — no submit button, no page reload.
 
 Search matches against three fields: title, description, and tags. It's case-insensitive and matches substrings, so typing "retry" will find patterns with "retry" in the title, "retrying" in the description, or a "retry" tag. A small X button appears to clear the search when it's active.
 
-The URL updates as you search — `?q=retry` — so you can bookmark or share a filtered view.
+The URL updates as you search (e.g. `?q=retry`), so you can bookmark or share a filtered view.
 
 ## Filters
 
-Below the search bar, the sidebar shows **category** filters. Each category displays its pattern count in an orange badge. Categories are sorted by count, most patterns first, so the most useful categories are always at the top.
+Below the search bar are category filters. Each category shows its pattern count in an orange badge.
 
-Click a category to filter. Click it again to deselect. When a filter is active, a "Clear all" button appears in the sidebar header to reset everything at once.
+Click a category to filter. Click it again to deselect. When filters are active, a "Clear all" option appears so you can reset everything at once.
 
 The main area has three more filter rows:
 
-**Sort by difficulty.** Two options: "Beginner to Senior" (the default) and "Senior to Beginner." This controls the order of the pattern grid, not which patterns are shown.
+- **Sort by difficulty.** Two options: "Beginner → Senior" (default) and "Senior → Beginner." This changes the order of the grid, not which patterns are shown.
+- **New.** Toggle between "All" and "New only." Each shows a count so you know what you'll get before clicking.
+- **Difficulty.** Filter to Beginner, Intermediate, or Senior. Each shows its count. Click again to return to "All."
 
-**New.** Toggle between "All" and "New only." New patterns are those added in recent releases. Each button shows a count badge so you can see how many new patterns exist before clicking.
+All filters compose. You can search for "stream," pick a category, set difficulty to Intermediate, and sort senior-first. The count updates live, and the full state is reflected in the URL as query parameters — so it's shareable and bookmarkable.
 
-**Difficulty.** Filter to a specific level: Beginner, Intermediate, or Senior. Each button shows its count. Like category, this is a toggle — click to select, click again to show all.
-
-All filters compose. You can search for "stream," filter to the Concurrency category, set difficulty to Intermediate, and sort senior-first. The result count updates to show "Showing 4 of 312 patterns" (or whatever the numbers are). Every filter state is reflected in the URL as query parameters, so the full state is shareable and bookmarkable.
-
-{/* TODO: Screenshot 2 — Pattern browser with active filters applied: a category selected in the sidebar, a difficulty level selected, and a search term entered. The result count should show something like "Showing N of 312 patterns." */}
+<!-- Screenshot: Browser with active search + category selected + difficulty selected, showing "Showing N of 309 patterns". -->
 
 ## Pattern Cards
 
-Each pattern in the grid is a card. Cards are dense by design — the goal is to show enough information that you can decide whether to click through without reading the full pattern.
+Each pattern in the grid is a card. Cards are dense on purpose. The goal is to show enough information that you can decide whether to click without opening the detail page every time.
 
 From top to bottom, a card shows:
 
-**Badges.** Up to three: a green "New" badge if the pattern was recently added, a purple difficulty badge (Beginner, Intermediate, or Senior), and a blue category badge. These match the filter options, so you can visually scan the grid and confirm your filters are working.
+- **Badges.** Up to three: a green "New" badge, a purple difficulty badge, and a blue category badge.
+- **Title.** The pattern name, linked to the detail page.
+- **Description.** A one-line summary (truncated if long).
+- **Goal (optional).** If the pattern includes a Goal, Rationale, or Key Insight section, the card extracts it and shows a short "why" line.
+- **Code previews.** If the pattern has both "Pattern" and "Anti-pattern" examples, the card shows both with syntax highlighting. Pattern is marked green; anti-pattern is marked red. If there's only one example, it shows that.
+- **Tags.** Outlined tag badges for topics like "error-handling," "streams," etc.
 
-**Title.** The pattern name, linked to the detail page.
-
-**Description.** A one-line summary, truncated if it's long.
-
-**Goal.** If the pattern content includes a Goal, Rationale, or Key Insight section, the card extracts and displays it — clamped to two lines. This is the "why should I care" line.
-
-**Code previews.** This is the most useful part of the card. If the pattern has a "Pattern" section (the good way) and an "Anti-Pattern" section (the bad way), the card shows both side by side with syntax highlighting. The pattern code gets a green left border; the anti-pattern gets a red one. If the pattern only has a single code example, that's shown instead. You get a real preview of the code before you click.
-
-**Tags.** At the bottom, outlined tag badges for topics like "error-handling," "concurrency," "streams," and so on.
-
-The entire card is clickable. Hover gives a subtle shadow lift. On keyboard navigation, a focus ring appears.
+The whole card is clickable.
 
 ## The Detail View
 
-Click a card and you land on the full pattern page at `/patterns/{id}`. The detail view shows the complete pattern content: description, all code blocks with syntax highlighting, and the full prose explanation.
+Click a card and you land on the full pattern page at `/patterns/{id}`. The detail view shows the complete pattern content: full prose explanation and all code blocks with syntax highlighting.
 
-The header shows the same badges as the card (New, category, difficulty) plus the full title and description. Below that, the rendered pattern content uses clean typography with proper code highlighting.
+The header includes the same badges (New, category, difficulty) plus the full title and description.
 
-{/* TODO: Screenshot 3 — A single pattern detail page showing the title, badges, description, and at least one syntax-highlighted code block. Pick a pattern that has both a "Pattern" and "Anti-Pattern" section if possible. */}
+<!-- Screenshot: A pattern detail page showing title + badges + at least one highlighted code block (ideally with both Pattern and Anti-pattern sections). -->
 
-If you arrived from a guided tour lesson, the back button at the top takes you back to exactly where you were — the correct lesson and step. Otherwise it links back to the tour index.
+If you arrived from a guided tour lesson, the back button takes you back to the tour flow. Otherwise it links back to the patterns list.
 
 ## Tips for Getting the Most Out of It
 
-**Start with difficulty.** If you're new to Effect, filter to Beginner and sort Beginner-first. Work through those before moving up. The difficulty levels are meaningful — Beginner patterns use core Effect concepts, Intermediate patterns introduce composition and services, and Senior patterns deal with advanced concurrency, resource management, and architecture.
-
-**Use search for problem-solving.** When you're stuck on a specific problem — retry logic, resource cleanup, error channels — type the problem into search rather than browsing categories. The tag and description matching usually surfaces the right pattern faster than navigating the category tree.
-
-**Bookmark filtered views.** Because the URL reflects all filter state, you can bookmark useful views. A link like `/patterns?difficulty=intermediate&category=Error%20Handling` takes you straight to intermediate error handling patterns every time.
-
-**Look at the anti-patterns.** Many cards show both the Effect way and the non-Effect (or naive) way side by side. The anti-patterns are just as educational as the patterns — they show you what to avoid and why the Effect approach is better.
+- **Start with difficulty.** If you're new to Effect, filter to Beginner and sort Beginner-first. The levels are meaningful: Beginner covers core concepts, Intermediate leans into composition and services, and Senior gets into advanced concurrency, resource management, and architecture.
+- **Use search for problem-solving.** When you're stuck on a specific problem (retry logic, resource cleanup, error channels), search first. Tags and descriptions usually surface the right pattern faster than browsing.
+- **Bookmark filtered views.** Because the URL reflects filter state, you can bookmark useful slices of the library.
+- **Read the anti-patterns.** The "wrong way" examples are educational. They show what to avoid, and why the Effect approach is better.
 
 ## What's Next
 
-The pattern library isn't static. We're adding patterns regularly — particularly in areas like testing strategies, streaming, and metrics. New patterns get the green "New" badge so you can find them quickly with the "New only" filter.
+The library isn't static. We're adding patterns regularly — especially in areas like testing strategies, streaming, and metrics. New patterns get the green "New" badge, so you can find them quickly with the "New only" filter.
 
 Head to [/patterns](/patterns) and start browsing. If you find something missing or wrong, open an issue on [GitHub](https://github.com/PaulJPhilp/EffectPatterns).
