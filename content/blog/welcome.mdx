@@ -1,11 +1,86 @@
 ---
-title: Welcome to the Effect Talk Blog
+title: Welcome to EffectTalk
 date: 2025-02-09
-excerpt: Announcements and articles about Effect.ts, patterns, and the Effect ecosystem.
+excerpt: "Introducing EffectTalk: 300+ production-ready Effect patterns, guided tours, and consulting — built for developers who ship Effect code."
 ---
 
-# Welcome to the Effect Talk Blog
+# Welcome to EffectTalk
 
-We'll post **announcements** and **articles** about Effect here—pattern updates, ecosystem news, and practical guides for building with Effect.ts.
+Most programming frameworks promise simplicity. Effect does something harder: it promises _composability_. You get type-safe errors, structured concurrency, dependency injection, and resource management — all in one coherent system. The trade-off is that Effect has a genuine learning curve. Not because the ideas are bad, but because they're unfamiliar. There's no prior art in TypeScript that looks quite like this.
 
-Stay tuned for more.
+EffectTalk exists because of that gap.
+
+## Everything Is an Effect
+
+The name is a nod to Smalltalk, the language that organized everything around a single concept: _everything is an object_. Messages, numbers, control flow — all objects, all the way down. That uniformity made Smalltalk strange at first and powerful forever after.
+
+Effect does the same thing for TypeScript, but the organizing concept is the _effect_. An HTTP request is an effect. A database query is an effect. Reading a config file, logging a message, retrying a failed operation — all effects. They compose the same way. They fail the same way. They get tested the same way.
+
+Once you internalize this, your code gets dramatically simpler. Not because you're writing less of it, but because every piece works with every other piece. You stop inventing ad-hoc patterns for error handling, retries, timeouts, and resource cleanup. You just use the one pattern that already works.
+
+The problem is getting from "I've read the docs" to "I can build production systems." That's the gap EffectTalk is designed to close.
+
+## What EffectTalk Is
+
+EffectTalk is a pattern library, learning platform, and consulting practice for Effect developers. It's built for people who have decided to use Effect in production and need concrete, copy-and-study examples — not toy demos, not theoretical explanations, but patterns extracted from real codebases that solve real problems.
+
+## What's Inside Today
+
+Here's what's live right now:
+
+- **300+ production-ready patterns** at [/patterns](/patterns). Filterable by category, difficulty level (Beginner, Intermediate, Senior), and tags. Full-text search. Sortable by difficulty. Each pattern includes working code you can study, adapt, and use.
+
+- **Guided tours** at [/tour](/tour). Five structured learning paths — Fundamentals, Composition, Concurrency, Data & I/O, and Validation. Each tour walks you through interactive steps with code examples. Sign in with GitHub and your progress is saved automatically.
+
+- **GitHub authentication**. Sign in with your GitHub account via [WorkOS](https://workos.com). This unlocks saved tour progress and API key management. No email lists, no marketing databases.
+
+- **Consulting** at [/consulting](/consulting). Three engagement types: Effect Assessment (evaluate whether Effect fits your team and codebase), Migration Strategy (plan and execute a move to Effect), and Developer Training (get your team productive with Effect). These are real engagements, not landing pages.
+
+## Coming Soon
+
+We're building four more tools:
+
+- **CLI Tool** — Effect patterns and utilities from your terminal
+- **MCP Server** — Integrate Effect pattern search into AI-assisted development workflows
+- **Code Review and Refactoring** — Automated analysis of your Effect code with improvement suggestions
+- **V3 to V4 Migration** — Tooling to help you upgrade between Effect major versions
+
+These are in active development. When they ship, you'll hear about it here.
+
+## Why This Exists
+
+The Effect documentation is good and getting better. The Discord is active and helpful. So why build another thing?
+
+Because documentation tells you what the API _does_. Patterns show you what to _build with it_.
+
+When you're staring at a production codebase and need to figure out how to compose three services that each need their own error channel, retry policy, and resource lifecycle — the docs give you the primitives and the type signatures. What you actually need is a worked example from someone who has done it before.
+
+That's the difference between a reference and a curriculum. Between knowing the grammar of a language and knowing how to write well in it.
+
+There's also a vocabulary problem. Effect introduces concepts — fibers, layers, scopes, services, schedules — that don't have direct analogs in typical TypeScript code. Teams adopting Effect need a shared vocabulary and shared patterns. When everyone on the team can look at a pattern and say "that's the Service pattern with scoped resources," you stop having long design discussions about things that are already solved.
+
+EffectTalk is an attempt to build that shared vocabulary, one pattern at a time.
+
+## What's Next
+
+Near-term, we're focused on three things:
+
+1. **More patterns.** The library currently covers the most common production scenarios, but there are gaps — particularly around testing strategies, streaming, and metrics. We'll keep adding patterns as we encounter and solve new problems.
+
+2. **More tours.** The five current tour groups cover Effect's core, but there's room for tours on specific domains: building HTTP APIs, working with databases, integrating with existing Node.js codebases.
+
+3. **CLI and MCP.** Getting Effect patterns into your editor and your terminal, where you actually need them. These are the next two tools to ship.
+
+We're not trying to build a framework or a platform play. We're building a reference library for people who write Effect code. The measure of success is simple: when you're stuck on an Effect problem, EffectTalk should be the fastest way to get unstuck.
+
+## Get Started
+
+Two places to start:
+
+- **Browse the patterns** at [/patterns](/patterns). Filter by your current skill level and explore what's there. The search works well — try typing whatever you're trying to build.
+
+- **Take a tour** at [/tour](/tour). Start with Fundamentals if you're new to Effect, or jump to Concurrency or Data & I/O if you already have the basics down.
+
+If you find a pattern that's wrong, missing, or confusing, open an issue on [GitHub](https://github.com/PaulJPhilp/EffectPatterns). This is a living library. It gets better when people use it and tell us what's missing.
+
+Welcome to EffectTalk. Let's build something.

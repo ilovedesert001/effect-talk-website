@@ -10,6 +10,7 @@ import {
   users,
   waitlistSignups,
   consultingInquiries,
+  feedback,
   apiKeys,
   analyticsEvents,
   patterns,
@@ -18,7 +19,15 @@ import {
 } from "@/db/schema"
 import type { WaitlistSource, AnalyticsEventType } from "@/types/strings"
 import type { DbError } from "@/services/Db/errors"
-import type { WaitlistSignup, ConsultingInquiry, DbUser, DbApiKey, DbPattern, DbRule } from "@/services/Db/types"
+import type {
+  WaitlistSignup,
+  ConsultingInquiry,
+  Feedback,
+  DbUser,
+  DbApiKey,
+  DbPattern,
+  DbRule,
+} from "@/services/Db/types"
 import { toDbError } from "@/services/Db/helpers"
 
 // ---------------------------------------------------------------------------
@@ -88,6 +97,38 @@ export function insertConsultingInquiry(data: {
         description: row.description,
         created_at: row.createdAt.toISOString(),
       } satisfies ConsultingInquiry
+    },
+    catch: toDbError,
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Feedback
+// ---------------------------------------------------------------------------
+
+export function insertFeedback(data: {
+  name?: string
+  email: string
+  message: string
+}): Effect.Effect<Feedback, DbError> {
+  return Effect.tryPromise({
+    try: async () => {
+      const [row] = await db
+        .insert(feedback)
+        .values({
+          name: data.name ?? null,
+          email: data.email,
+          message: data.message,
+        })
+        .returning()
+      if (!row) throw new Error("Insert returned no row")
+      return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        message: row.message,
+        created_at: row.createdAt.toISOString(),
+      } satisfies Feedback
     },
     catch: toDbError,
   })

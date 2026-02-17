@@ -21,6 +21,7 @@ export type TabType = "cli" | "mcp" | "tour" | "playground" | "code-review"
 export type AnalyticsEventType =
   | "waitlist_submitted"
   | "consulting_submitted"
+  | "feedback_submitted"
   | "tab_clicked"
   | "search_performed"
   | "tour_started"

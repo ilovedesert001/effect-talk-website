@@ -11,7 +11,8 @@ const SERVER_DISTINCT_ID = "server"
 export interface PostHogAnalyticsService {
   readonly capture: (
     event: string,
-    properties?: Record<string, unknown>
+    properties?: Record<string, unknown>,
+    distinctId?: string
   ) => Effect.Effect<void, PostHogError>
   readonly identify: (
     distinctId: string,
@@ -45,12 +46,12 @@ export class PostHogAnalytics extends Effect.Service<PostHogAnalyticsService>()(
         flushInterval: 0,
       })
       return {
-        capture: (event: string, properties?: Record<string, unknown>) =>
+        capture: (event: string, properties?: Record<string, unknown>, distinctId?: string) =>
           Effect.tryPromise({
             try: () =>
               Promise.resolve(
                 client.capture({
-                  distinctId: SERVER_DISTINCT_ID,
+                  distinctId: distinctId ?? SERVER_DISTINCT_ID,
                   event,
                   properties: properties ?? {},
                 })

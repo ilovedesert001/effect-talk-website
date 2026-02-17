@@ -3,7 +3,7 @@
  *
  * Use a dedicated test database only. Never set DATABASE_URL to your production
  * or staging database—these tests TRUNCATE users, api_keys, waitlist_signups,
- * consulting_inquiries, and analytics_events, which would destroy production data.
+ * consulting_inquiries, feedback, and analytics_events, which would destroy production data.
  *
  * To run: set RUN_INTEGRATION_TESTS=1 and DATABASE_URL to a test Postgres instance
  * (e.g. a separate Neon branch or local Docker). Skipped when RUN_INTEGRATION_TESTS
@@ -56,7 +56,7 @@ describe("Db + Analytics + ApiKeys integration (real DB)", () => {
     if (!runIntegrationTests || !dbAvailable || isProductionLikeDb()) return
     const { db } = await import("../../db/client")
     await db.execute(
-      sql`TRUNCATE analytics_events, api_keys, consulting_inquiries, waitlist_signups, users RESTART IDENTITY CASCADE`
+      sql`TRUNCATE analytics_events, api_keys, consulting_inquiries, feedback, waitlist_signups, users RESTART IDENTITY CASCADE`
     )
   })
 
@@ -97,6 +97,41 @@ describe("Db + Analytics + ApiKeys integration (real DB)", () => {
       expect(inquiry.email).toBe("jane@example.com")
       expect(inquiry.description).toBe("Need help with Effect.")
       expect(inquiry.id).toBeDefined()
+    })
+  })
+
+  describe("Feedback", () => {
+    it("inserts feedback", { skip: !runIntegrationTests }, async () => {
+      if (!dbAvailable) return
+      const DbApi = await import("../Db/api")
+      const result = await Effect.runPromise(
+        DbApi.insertFeedback({
+          email: "feedback@example.com",
+          message: "This is at least ten characters of feedback.",
+        })
+      )
+      expect(result.id).toBeDefined()
+      expect(result.email).toBe("feedback@example.com")
+      expect(result.message).toBe("This is at least ten characters of feedback.")
+      expect(result.name).toBeNull()
+      expect(result.created_at).toBeDefined()
+    })
+
+    it("inserts feedback with optional name", { skip: !runIntegrationTests }, async () => {
+      if (!dbAvailable) return
+      const DbApi = await import("../Db/api")
+      const result = await Effect.runPromise(
+        DbApi.insertFeedback({
+          name: "Feedback User",
+          email: "named@example.com",
+          message: "Another valid message that is long enough.",
+        })
+      )
+      expect(result.id).toBeDefined()
+      expect(result.email).toBe("named@example.com")
+      expect(result.name).toBe("Feedback User")
+      expect(result.message).toBe("Another valid message that is long enough.")
+      expect(result.created_at).toBeDefined()
     })
   })
 

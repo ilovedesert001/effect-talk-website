@@ -13,6 +13,10 @@ export interface ConsultingSubmittedEvent {
   readonly type: Extract<AnalyticsEventType, "consulting_submitted">
 }
 
+export interface FeedbackSubmittedEvent {
+  readonly type: Extract<AnalyticsEventType, "feedback_submitted">
+}
+
 export interface TabClickedEvent {
   readonly type: Extract<AnalyticsEventType, "tab_clicked">
   readonly tab: TabType
@@ -49,6 +53,7 @@ export interface LessonCompletedEvent {
 export type AnalyticsEvent =
   | WaitlistSubmittedEvent
   | ConsultingSubmittedEvent
+  | FeedbackSubmittedEvent
   | TabClickedEvent
   | SearchPerformedEvent
   | TourStartedEvent

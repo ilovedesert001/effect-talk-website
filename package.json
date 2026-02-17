@@ -23,6 +23,8 @@
     "db:promote:all": "bun run scripts/promote.ts all",
     "db:promote:dry": "bun run scripts/promote.ts all --dry-run",
     "db:check": "bun run scripts/check-db.ts",
+    "db:apply-feedback": "bun run scripts/apply-feedback-migration.ts",
+    "db:seed-migrations-then-migrate": "bun run scripts/seed-drizzle-migrations-and-migrate-feedback.ts",
     "env:check": "bun run scripts/check-env-for-deploy.ts"
   },
   "dependencies": {
@@ -32,12 +34,16 @@
     "@effect/platform-node": "^0.104.1",
     "@effect/schema": "^0.75.5",
     "@neondatabase/serverless": "^1.0.2",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.70.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
+    "@opentelemetry/sdk-node": "^0.212.0",
     "@tailwindcss/typography": "^0.5.19",
     "@workos-inc/authkit-nextjs": "^2.14.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",
-    "effect": "^3.19.17",
+    "effect": "^3.19.18",
     "effect-mdx": "^0.2.2",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
@@ -52,9 +58,10 @@
     "sonner": "^2.0.7",
     "sugar-high": "^0.9.5",
     "tailwind-merge": "^3.4.1",
-    "vercel": "^50.17.1"
+    "vercel": "^50.18.0"
   },
   "devDependencies": {
+    "@opentelemetry/sdk-trace-base": "^2.5.1",
     "@tailwindcss/postcss": "^4.1.18",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

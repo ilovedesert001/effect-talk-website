@@ -6,6 +6,7 @@
 import { Effect } from "effect"
 import {
   EMAIL_FROM_ADDRESS,
+  FEEDBACK_RECIPIENT_EMAIL,
   EMAIL_PATTERNS_LINK,
   BUSINESS_DAYS_RESPONSE_TIME,
   PRODUCT_NAME_PLAYGROUND,
@@ -74,4 +75,45 @@ export function sendConsultingConfirmation(
         message: error instanceof Error ? error.message : "Failed to send email",
       }),
   })
+}
+
+/**
+ * Send a feedback notification email to the site owner.
+ */
+export function sendFeedbackNotification(data: {
+  name: string | null
+  email: string
+  message: string
+}): Effect.Effect<void, EmailError> {
+  const fromLabel = data.name ? `${data.name} <${data.email}>` : data.email
+  return Effect.tryPromise({
+    try: async () => {
+      const resend = getResendClient()
+      await resend.emails.send({
+        from: EMAIL_FROM_ADDRESS,
+        to: FEEDBACK_RECIPIENT_EMAIL,
+        replyTo: data.email,
+        subject: `[EffectTalk] Feedback from ${data.name ?? "Anonymous"}`,
+        html: `
+          <h2>New feedback</h2>
+          <p><strong>From:</strong> ${escapeHtml(fromLabel)}</p>
+          <p><strong>Message:</strong></p>
+          <pre style="white-space: pre-wrap; font-family: inherit;">${escapeHtml(data.message)}</pre>
+        `,
+      })
+    },
+    catch: (error) =>
+      new EmailError({
+        message: error instanceof Error ? error.message : "Failed to send email",
+      }),
+  })
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
 }

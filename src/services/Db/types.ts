@@ -22,6 +22,14 @@ export interface ConsultingInquiry {
   readonly created_at: string
 }
 
+export interface Feedback {
+  readonly id: string
+  readonly name: string | null
+  readonly email: string
+  readonly message: string
+  readonly created_at: string
+}
+
 export interface DbUser {
   readonly id: string
   readonly workos_id: string

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { Effect, Schema, Either } from "effect"
+import { withAuth } from "@workos-inc/authkit-nextjs"
 import { trackEvent, type AnalyticsEvent } from "@/services/Analytics"
 import {
   PostHogAnalytics,
@@ -104,11 +105,19 @@ export async function POST(request: NextRequest) {
 
   const event = decoded.right as AnalyticsEvent
 
+  let userId: string | undefined
+  try {
+    const { user } = await withAuth()
+    userId = user?.id
+  } catch {
+    // Auth resolution failed — continue with default "server" distinctId
+  }
+
   const program = Effect.gen(function* () {
     yield* trackEvent(event)
     const posthog = yield* PostHogAnalytics
     const { eventName, properties } = analyticsEventToPostHog(event)
-    yield* posthog.capture(eventName, properties)
+    yield* posthog.capture(eventName, properties, userId)
     yield* posthog.flush()
   }).pipe(Effect.provide(PostHogAnalytics.Default))
 
