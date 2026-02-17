@@ -30,7 +30,7 @@ Here's what's live right now:
 
 - **Guided tours** at [/tour](/tour). Five structured learning paths — Fundamentals, Composition, Concurrency, Data & I/O, and Validation. Each tour walks you through interactive steps with code examples. Sign in with GitHub and your progress is saved automatically.
 
-- **GitHub authentication**. Sign in with your GitHub account via [WorkOS](https://workos.com). This unlocks saved tour progress and API key management. No email lists, no marketing databases.
+- **GitHub authentication**. Continue with your GitHub account via [WorkOS](https://workos.com). Sign-in is for saved progress and API keys — not for a mailing list.
 
 - **Consulting** at [/consulting](/consulting). Three engagement types: Effect Assessment (evaluate whether Effect fits your team and codebase), Migration Strategy (plan and execute a move to Effect), and Developer Training (get your team productive with Effect). These are real engagements, not landing pages.
 
@@ -49,13 +49,9 @@ These are in active development. When they ship, you'll hear about it here.
 
 The Effect documentation is good and getting better. The Discord is active and helpful. So why build another thing?
 
-Because documentation tells you what the API _does_. Patterns show you what to _build with it_.
+Because documentation tells you what the API _does_. When you're staring at a production codebase and need to figure out how to compose three services that each need their own error channel, retry policy, and resource lifecycle — the docs give you the primitives. What you actually need is a worked example from someone who has done it before. That's the difference between a reference and a curriculum.
 
-When you're staring at a production codebase and need to figure out how to compose three services that each need their own error channel, retry policy, and resource lifecycle — the docs give you the primitives and the type signatures. What you actually need is a worked example from someone who has done it before.
-
-That's the difference between a reference and a curriculum. Between knowing the grammar of a language and knowing how to write well in it.
-
-There's also a vocabulary problem. Effect introduces concepts — fibers, layers, scopes, services, schedules — that don't have direct analogs in typical TypeScript code. Teams adopting Effect need a shared vocabulary and shared patterns. When everyone on the team can look at a pattern and say "that's the Service pattern with scoped resources," you stop having long design discussions about things that are already solved.
+There's also a vocabulary problem. Effect introduces concepts — fibers, layers, scopes, services, schedules — that don't have direct analogs in typical TypeScript code. Teams adopting Effect need shared patterns. When everyone on the team can look at a piece of code and say "that's the Service pattern with scoped resources," you stop having long design discussions about things that are already solved.
 
 EffectTalk is an attempt to build that shared vocabulary, one pattern at a time.
 
