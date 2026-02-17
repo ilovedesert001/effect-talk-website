@@ -25,12 +25,13 @@ if (!databaseUrl) {
 
 const db = drizzle(databaseUrl)
 
+/** Tables required in every environment. */
 const REQUIRED_TABLES = [
   "users",
   "waitlist_signups",
   "consulting_inquiries",
+  "feedback",
   "api_keys",
-  "effect_patterns",
   "rules",
   "rules_staging",
   "tour_lessons",
@@ -41,6 +42,9 @@ const REQUIRED_TABLES = [
   "content_deployments",
   "analytics_events",
 ] as const
+
+/** Either effect_patterns (shared DB) or patterns (local from old migrations) must exist. */
+const PATTERNS_TABLE_OPTIONS = ["effect_patterns", "patterns"] as const
 
 async function main(): Promise<void> {
   let hasError = false
@@ -61,21 +65,37 @@ async function main(): Promise<void> {
     }
   }
 
-  // 2. Check effect_patterns has release_version column (used to derive "new" in UI)
-  const patternColumns = await db.execute(sql.raw(`
-    SELECT column_name FROM information_schema.columns
-    WHERE table_schema = 'public' AND table_name = 'effect_patterns'
-  `))
-  const patternColSet = new Set(
-    (patternColumns.rows as Array<{ column_name: string }>).map((r) => r.column_name),
-  )
-  if (!patternColSet.has("release_version")) {
-    console.error("effect_patterns table missing column: release_version")
+  const patternsTable = PATTERNS_TABLE_OPTIONS.find((t) => existingSet.has(t))
+  if (!patternsTable) {
+    console.error(`Missing patterns table: need one of ${PATTERNS_TABLE_OPTIONS.join(", ")}`)
     hasError = true
   }
 
-  // 3. Row counts for content tables
-  const contentTables = ["effect_patterns", "rules", "rules_staging", "tour_lessons", "tour_lessons_staging", "tour_steps", "tour_steps_staging"]
+  // 2. Check patterns table has release_version column (used to derive "new" in UI)
+  if (patternsTable) {
+    const patternColumns = await db.execute(sql.raw(`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = '${patternsTable}'
+    `))
+    const patternColSet = new Set(
+      (patternColumns.rows as Array<{ column_name: string }>).map((r) => r.column_name),
+    )
+    if (!patternColSet.has("release_version")) {
+      console.error(`${patternsTable} table missing column: release_version`)
+      hasError = true
+    }
+  }
+
+  // 3. Row counts for content tables (use whichever patterns table exists)
+  const contentTables = [
+    ...(patternsTable ? [patternsTable] : []),
+    "rules",
+    "rules_staging",
+    "tour_lessons",
+    "tour_lessons_staging",
+    "tour_steps",
+    "tour_steps_staging",
+  ]
   const counts: Record<string, number> = {}
   for (const table of contentTables) {
     if (!existingSet.has(table)) continue
@@ -107,7 +127,7 @@ async function main(): Promise<void> {
   }
 
   console.log("Tables: all required tables present")
-  console.log("effect_patterns.release_version: column present")
+  console.log(`Patterns table: ${patternsTable} (release_version present)`)
   console.log("\nContent row counts:")
   for (const table of contentTables) {
     const c = counts[table] ?? 0
