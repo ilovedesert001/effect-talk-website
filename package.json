@@ -39,6 +39,7 @@
     "@opentelemetry/exporter-trace-otlp-http": "^0.212.0",
     "@opentelemetry/sdk-node": "^0.212.0",
     "@tailwindcss/typography": "^0.5.19",
+    "@tanstack/react-virtual": "^3.13.18",
     "@workos-inc/authkit-nextjs": "^2.14.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

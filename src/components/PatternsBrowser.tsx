@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
+import { useLayoutEffect, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useVirtualizer } from "@tanstack/react-virtual"
 import { PatternsSidebar } from "@/components/PatternsSidebar"
 import { PatternCard } from "@/components/PatternCard"
 import { Badge } from "@/components/ui/badge"
@@ -12,10 +13,72 @@ import {
   sortDifficultiesByDisplayOrder,
   DIFFICULTY_DISPLAY_ORDER,
 } from "@/lib/difficulty"
+import {
+  markInput,
+  measureSync,
+  recordPaintFromInput,
+} from "@/lib/pattern-browser-perf"
+
+const VIRTUALIZE_THRESHOLD = 60
+/** Card height estimate + gap-3 (12px) for accurate scroll height */
+const CARD_ESTIMATE_PX = 252
 
 const SORT_BEGINNER_FIRST = "beginner-first"
 const SORT_SENIOR_FIRST = "senior-first"
 type SortOrder = typeof SORT_BEGINNER_FIRST | typeof SORT_SENIOR_FIRST
+
+interface PatternsVirtualListProps {
+  readonly patterns: readonly Pattern[]
+}
+
+function PatternsVirtualList({ patterns }: PatternsVirtualListProps) {
+  const parentRef = useRef<HTMLDivElement>(null)
+  const virtualizer = useVirtualizer({
+    count: patterns.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => CARD_ESTIMATE_PX,
+    overscan: 5,
+    getItemKey: (index) => patterns[index].id,
+  })
+  const virtualItems = virtualizer.getVirtualItems()
+  const totalSize = virtualizer.getTotalSize()
+
+  return (
+    <div
+      ref={parentRef}
+      className="overflow-auto rounded-md"
+      style={{ maxHeight: "70vh" }}
+      aria-label="Pattern list"
+    >
+      <div
+        style={{ height: totalSize, position: "relative", width: "100%" }}
+        role="presentation"
+      >
+        {virtualItems.map((virtualRow) => {
+          const pattern = patterns[virtualRow.index]
+          return (
+            <div
+              key={pattern.id}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                transform: `translateY(${virtualRow.start}px)`,
+                minHeight: `${virtualRow.size}px`,
+                paddingBottom: "0.75rem",
+              }}
+              data-index={virtualRow.index}
+              ref={virtualizer.measureElement}
+            >
+              <PatternCard pattern={pattern} />
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 interface PatternsBrowserProps {
   readonly patterns: readonly Pattern[]
@@ -46,87 +109,100 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
   const sortOrder: SortOrder =
     searchParams.get("sort") === SORT_SENIOR_FIRST ? SORT_SENIOR_FIRST : SORT_BEGINNER_FIRST
 
-  // Patterns matching the search query (before category/difficulty/new filters).
-  // Facet counts are derived from this set so search narrows all counts.
-  const searchFilteredPatterns = useMemo(() => {
-    if (!query) return patterns
-    return patterns.filter((pattern) => {
-      const searchable = `${pattern.title} ${pattern.description} ${pattern.tags?.join(" ") ?? ""}`.toLowerCase()
-      return searchable.includes(query)
-    })
-  }, [patterns, query])
+  // Mark user input for keystroke-to-paint latency (dev perf baseline)
+  const prevParamsRef = useRef({ query, activeCategory, activeDifficulty, activeTags: activeTags.length, activeNewOnly, sortOrder })
+  useLayoutEffect(() => {
+    const prev = prevParamsRef.current
+    const changed =
+      prev.query !== query ||
+      prev.activeCategory !== activeCategory ||
+      prev.activeDifficulty !== activeDifficulty ||
+      prev.activeTags !== activeTags.length ||
+      prev.activeNewOnly !== activeNewOnly ||
+      prev.sortOrder !== sortOrder
+    if (changed) {
+      markInput()
+      prevParamsRef.current = { query, activeCategory, activeDifficulty, activeTags: activeTags.length, activeNewOnly, sortOrder }
+    }
+  }, [query, activeCategory, activeDifficulty, activeTags.length, activeNewOnly, sortOrder])
+
+  // Precompute per-pattern searchable text and tag Set once per patterns input
+  interface PatternEntry {
+    readonly pattern: Pattern
+    readonly searchable: string
+    readonly tagSet: ReadonlySet<string>
+  }
+  const precomputedEntries = useMemo((): readonly PatternEntry[] => {
+    return patterns.map((pattern) => ({
+      pattern,
+      searchable: `${pattern.title} ${pattern.description} ${pattern.tags?.join(" ") ?? ""}`.toLowerCase(),
+      tagSet: new Set(pattern.tags ?? []),
+    }))
+  }, [patterns])
+
+  // Search-filtered entries (keep entries for downstream filter to use tagSet)
+  const searchFilteredEntries = useMemo(() => {
+    return measureSync("searchFilterMs", () =>
+      query ? precomputedEntries.filter((e) => e.searchable.includes(query)) : precomputedEntries,
+    )
+  }, [precomputedEntries, query])
+
+  const searchFilteredPatterns = useMemo(
+    () => searchFilteredEntries.map((e) => e.pattern),
+    [searchFilteredEntries],
+  )
 
   // Compute facet counts from the search-filtered subset
   const { categories, difficulties, newCount, totalAfterSearch } = useMemo(() => {
-    const categoryMap = new Map<string, number>()
-    const difficultyMap = new Map<string, number>()
-    let newPatternCount = 0
+    return measureSync("facetCountMs", () => {
+      const categoryMap = new Map<string, number>()
+      const difficultyMap = new Map<string, number>()
+      let newPatternCount = 0
 
-    for (const pattern of searchFilteredPatterns) {
-      if (pattern.new) newPatternCount++
-      if (pattern.category) {
-        categoryMap.set(pattern.category, (categoryMap.get(pattern.category) ?? 0) + 1)
-      }
-      if (pattern.difficulty) {
-        const diffLower = pattern.difficulty.toLowerCase()
-        difficultyMap.set(diffLower, (difficultyMap.get(diffLower) ?? 0) + 1)
-      }
-    }
-
-    const toFacetArray = (map: Map<string, number>): FacetCount[] =>
-      Array.from(map.entries())
-        .map(([value, count]) => ({ value, count }))
-        .sort((a, b) => b.count - a.count)
-
-    const difficultyFacets = toFacetArray(difficultyMap)
-    const orderedDifficulties = sortDifficultiesByDisplayOrder(difficultyFacets)
-
-    return {
-      categories: toFacetArray(categoryMap),
-      difficulties: orderedDifficulties,
-      newCount: newPatternCount,
-      totalAfterSearch: searchFilteredPatterns.length,
-    }
-  }, [searchFilteredPatterns])
-
-  // Filter patterns client-side
-  const filteredPatterns = useMemo(() => {
-    return patterns.filter((pattern) => {
-      // Text search (query)
-      if (query) {
-        const searchable = `${pattern.title} ${pattern.description} ${pattern.tags?.join(" ") ?? ""}`.toLowerCase()
-        if (!searchable.includes(query)) {
-          return false
+      for (const { pattern } of searchFilteredEntries) {
+        if (pattern.new) newPatternCount++
+        if (pattern.category) {
+          categoryMap.set(pattern.category, (categoryMap.get(pattern.category) ?? 0) + 1)
+        }
+        if (pattern.difficulty) {
+          const diffLower = pattern.difficulty.toLowerCase()
+          difficultyMap.set(diffLower, (difficultyMap.get(diffLower) ?? 0) + 1)
         }
       }
 
-      // Category filter
-      if (activeCategory && pattern.category !== activeCategory) {
-        return false
-      }
+      const toFacetArray = (map: Map<string, number>): FacetCount[] =>
+        Array.from(map.entries())
+          .map(([value, count]) => ({ value, count }))
+          .sort((a, b) => b.count - a.count)
 
-      // Difficulty filter
-      if (activeDifficulty && pattern.difficulty?.toLowerCase() !== activeDifficulty) {
-        return false
-      }
+      const difficultyFacets = toFacetArray(difficultyMap)
+      const orderedDifficulties = sortDifficultiesByDisplayOrder(difficultyFacets)
 
-      // Tag filters (AND logic - pattern must have ALL selected tags)
-      if (activeTags.length > 0) {
-        const patternTags = pattern.tags ?? []
-        const hasAllTags = activeTags.every((tag) => patternTags.includes(tag))
-        if (!hasAllTags) {
-          return false
-        }
+      return {
+        categories: toFacetArray(categoryMap),
+        difficulties: orderedDifficulties,
+        newCount: newPatternCount,
+        totalAfterSearch: searchFilteredEntries.length,
       }
-
-      // New-only filter
-      if (activeNewOnly && !pattern.new) {
-        return false
-      }
-
-      return true
     })
-  }, [patterns, query, activeCategory, activeDifficulty, activeTags, activeNewOnly])
+  }, [searchFilteredEntries])
+
+  // Apply category/difficulty/tag/new filters to search-filtered list (no duplicate search)
+  const activeTagsSet = useMemo(() => new Set(activeTags), [activeTags])
+  const filteredPatterns = useMemo(() => {
+    return measureSync("filterApplyMs", () =>
+      searchFilteredEntries
+        .filter((entry) => {
+          const p = entry.pattern
+          if (activeCategory && p.category !== activeCategory) return false
+          if (activeDifficulty && p.difficulty?.toLowerCase() !== activeDifficulty) return false
+          if (activeTagsSet.size > 0 && ![...activeTagsSet].every((tag) => entry.tagSet.has(tag))) return false
+          if (activeNewOnly && !p.new) return false
+          return true
+        })
+        .map((e) => e.pattern),
+    )
+  }, [searchFilteredEntries, activeCategory, activeDifficulty, activeTagsSet, activeNewOnly])
 
   // Sort filtered patterns by difficulty (beginner → senior or senior → beginner)
   const difficultyOrderMap = useMemo(() => {
@@ -137,18 +213,27 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
   }, [])
 
   const sortedPatterns = useMemo(() => {
-    const getOrder = (p: Pattern): number =>
-      difficultyOrderMap.get(p.difficulty?.toLowerCase() ?? "") ?? -1
-    const order = [...filteredPatterns].sort((a, b) => {
-      const ia = getOrder(a)
-      const ib = getOrder(b)
-      if (ia === -1 && ib === -1) return 0
-      if (ia === -1) return 1
-      if (ib === -1) return -1
-      return sortOrder === SORT_SENIOR_FIRST ? ib - ia : ia - ib
+    return measureSync("sortMs", () => {
+      const getOrder = (p: Pattern): number =>
+        difficultyOrderMap.get(p.difficulty?.toLowerCase() ?? "") ?? -1
+      return [...filteredPatterns].sort((a, b) => {
+        const ia = getOrder(a)
+        const ib = getOrder(b)
+        if (ia === -1 && ib === -1) return 0
+        if (ia === -1) return 1
+        if (ib === -1) return -1
+        return sortOrder === SORT_SENIOR_FIRST ? ib - ia : ia - ib
+      })
     })
-    return order
   }, [filteredPatterns, sortOrder, difficultyOrderMap])
+
+  // Record paint-after-input for baseline (dev perf)
+  useLayoutEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      recordPaintFromInput()
+    })
+    return () => cancelAnimationFrame(raf)
+  })
 
   // Update URL params when filters change
   const updateSearchParams = (updates: {
@@ -196,7 +281,7 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
     }
 
     if (updates.sort !== undefined) {
-      if (updates.sort && updates.sort !== SORT_BEGINNER_FIRST) {
+      if (updates.sort != null) {
         params.set("sort", updates.sort)
       } else {
         params.delete("sort")
@@ -392,12 +477,14 @@ export function PatternsBrowser({ patterns, emptyStateHint }: PatternsBrowserPro
               </button>
             )}
           </div>
-        ) : (
+        ) : sortedPatterns.length <= VIRTUALIZE_THRESHOLD ? (
           <div className="grid gap-3">
             {sortedPatterns.map((pattern) => (
               <PatternCard key={pattern.id} pattern={pattern} />
             ))}
           </div>
+        ) : (
+          <PatternsVirtualList patterns={sortedPatterns} />
         )}
       </div>
     </div>

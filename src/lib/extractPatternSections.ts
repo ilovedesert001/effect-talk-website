@@ -154,6 +154,21 @@ export function extractPatternSections(html: string): PatternSections {
   }
 }
 
+const SECTIONS_CACHE_MAX = 500
+const sectionsCache = new Map<string, PatternSections>()
+
+/**
+ * Return extracted sections for a pattern, using a cache keyed by id to avoid re-parsing HTML.
+ */
+export function getCachedPatternSections(id: string, content: string): PatternSections {
+  const cached = sectionsCache.get(id)
+  if (cached !== undefined) return cached
+  if (sectionsCache.size >= SECTIONS_CACHE_MAX) sectionsCache.clear()
+  const sections = extractPatternSections(content)
+  sectionsCache.set(id, sections)
+  return sections
+}
+
 /**
  * Truncate code to a maximum number of lines.
  */

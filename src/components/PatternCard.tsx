@@ -1,11 +1,12 @@
 "use client"
 
-import { useMemo } from "react"
+import { memo, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card"
-import { extractPatternSections } from "@/lib/extractPatternSections"
+import { getCachedPatternSections } from "@/lib/extractPatternSections"
 import { difficultyDisplayLabel } from "@/lib/difficulty"
+import { measureSync } from "@/lib/pattern-browser-perf"
 import { CodeHighlight } from "@/components/CodeHighlight"
 import type { Pattern } from "@/services/BackendApi"
 
@@ -13,10 +14,11 @@ interface PatternCardProps {
   readonly pattern: Pattern
 }
 
-export function PatternCard({ pattern }: PatternCardProps) {
+function PatternCardInner({ pattern }: PatternCardProps) {
   const sections = useMemo(
-    () => extractPatternSections(pattern.content),
-    [pattern.content],
+    () =>
+      measureSync("cardExtractSectionsMs", () => getCachedPatternSections(pattern.id, pattern.content)),
+    [pattern.id, pattern.content],
   )
 
   const goalText = sections.goal?.text ?? null
@@ -129,8 +131,10 @@ export function PatternCard({ pattern }: PatternCardProps) {
   )
 }
 
+export const PatternCard = memo(PatternCardInner)
+
 // ---------------------------------------------------------------------------
-// Code preview block sub-component
+// Code preview block sub-component (lazy: only render highlight when in view)
 // ---------------------------------------------------------------------------
 
 interface CodePreviewBlockProps {
@@ -163,14 +167,44 @@ function CodePreviewBlock({ label, variant, code, language }: CodePreviewBlockPr
         </span>
       </div>
 
-      {/* Code block with horizontal scroll */}
+      {/* Code block: defer highlight until in view to reduce initial JS cost */}
       <div className="px-2.5 pb-2.5 overflow-x-auto">
-        <CodeHighlight
-          code={code}
-          language={language}
-          className="text-[10px] leading-snug"
-        />
+        <LazyCodeHighlight code={code} language={language} className="text-[10px] leading-snug" />
       </div>
+    </div>
+  )
+}
+
+interface LazyCodeHighlightProps {
+  readonly code: string
+  readonly language: string | null
+  readonly className?: string
+}
+
+function LazyCodeHighlight({ code, language, className }: LazyCodeHighlightProps) {
+  const [isVisible, setIsVisible] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setIsVisible(true)
+      },
+      { rootMargin: "100px", threshold: 0 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <div ref={containerRef} style={{ minHeight: "2.5rem" }}>
+      {isVisible ? (
+        <CodeHighlight code={code} language={language} className={className} />
+      ) : (
+        <pre className="text-xs font-mono text-muted-foreground">…</pre>
+      )}
     </div>
   )
 }
