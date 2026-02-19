@@ -11,7 +11,7 @@ export const metadata = buildMetadata({
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col items-center">
       {/* Hero */}
       <section className="container px-4 md:px-6 py-16 md:py-24 flex flex-col items-center text-center">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight max-w-3xl">
@@ -39,7 +39,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="container mx-auto px-4 md:px-6 pb-16 md:pb-24">
+      <section className="container px-4 md:px-6 pb-16 md:pb-24">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Link href="/patterns">
             <Card className="h-full hover:bg-muted/50 transition-colors">
