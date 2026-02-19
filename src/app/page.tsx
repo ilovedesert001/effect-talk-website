@@ -39,7 +39,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="container px-4 md:px-6 pb-16 md:pb-24">
+      <section className="container mx-auto px-4 md:px-6 pb-16 md:pb-24">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           <Link href="/patterns">
             <Card className="h-full hover:bg-muted/50 transition-colors">
